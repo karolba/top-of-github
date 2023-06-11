@@ -1,4 +1,7 @@
 #!/bin/sh
+set -a
+source .env
+set +a
 while true; do
 	./fetcher || { echo "[!!] Fetcher failed, return code: $?"; }
 	rm -rfv to-upload
