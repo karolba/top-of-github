@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -19,37 +18,20 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-var targetDirectory = flag.String("directory", ".", "A directory to upload")
-
 const (
 	maxUploads = 4 // Maximum number of concurrent uploads
 )
 
-func haveToGetEnvironmentVariable(name string) string {
-	val, ok := os.LookupEnv(name)
-	if !ok {
-		log.Panicf("Missing required environment variable %s\n", name)
-	}
-	if val == "" {
-		log.Panicf("Required environment variable %s is empty\n", name)
-	}
-	return val
-}
-
 func cloudflareR2Client() *s3.Client {
-	var accountId = haveToGetEnvironmentVariable("R2_ACCOUNT_ID")
-	var accessKeyId = haveToGetEnvironmentVariable("R2_ACCESS_KEY_ID")
-	var accessKeySecret = haveToGetEnvironmentVariable("R2_ACCESS_KEY_SECRET")
-
 	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...any) (aws.Endpoint, error) {
 		return aws.Endpoint{
-			URL: fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accountId),
+			URL: fmt.Sprintf("https://%s.r2.cloudflarestorage.com", ACCOUNT_ID),
 		}, nil
 	})
 
 	cfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithEndpointResolverWithOptions(r2Resolver),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKeyId, accessKeySecret, "")),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(ACCESS_KEY_ID, ACCESS_KEY_SECRET, "")),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -61,13 +43,10 @@ func cloudflareR2Client() *s3.Client {
 func main() {
 	var exitCode atomic.Int32
 
-	flag.Parse()
 	err := os.Chdir(*targetDirectory)
 	if err != nil {
 		log.Fatalf("Could not chdir to %v: %v", *targetDirectory, err)
 	}
-
-	var bucketName = haveToGetEnvironmentVariable("R2_BUCKET_NAME")
 
 	client := cloudflareR2Client()
 
@@ -126,7 +105,7 @@ func main() {
 
 				// Upload file to S3
 				_, err = client.PutObject(context.Background(), &s3.PutObjectInput{
-					Bucket:             aws.String(bucketName),
+					Bucket:             aws.String(BUCKET_NAME),
 					Key:                aws.String(path),
 					Body:               file,
 					ContentType:        aws.String("application/json"),
