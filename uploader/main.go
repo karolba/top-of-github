@@ -2,12 +2,16 @@ package main
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -55,13 +59,15 @@ func cloudflareR2Client() *s3.Client {
 }
 
 func main() {
+	var exitCode atomic.Int32
+
 	flag.Parse()
 	err := os.Chdir(*targetDirectory)
 	if err != nil {
 		log.Fatalf("Could not chdir to %v: %v", *targetDirectory, err)
 	}
 
-	var bucketName = "top-of-github"
+	var bucketName = haveToGetEnvironmentVariable("R2_BUCKET_NAME")
 
 	client := cloudflareR2Client()
 
@@ -86,6 +92,7 @@ func main() {
 	err = filepath.WalkDir(directoryPath, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			log.Println("Error:", err)
+			exitCode.Add(1)
 			return nil
 		}
 
@@ -99,9 +106,17 @@ func main() {
 					wg.Done()
 				}()
 
+				md5Sum, err := calculateMD5(path)
+				if err != nil {
+					log.Printf("Couldn't calculate an md5 checksum for file %s: %v\n", path, err)
+					exitCode.Add(1)
+					return
+				}
+
 				file, err := os.Open(path)
 				if err != nil {
 					log.Println("Error:", err)
+					exitCode.Add(1)
 					return
 				}
 				defer file.Close()
@@ -111,12 +126,17 @@ func main() {
 
 				// Upload file to S3
 				_, err = client.PutObject(context.Background(), &s3.PutObjectInput{
-					Bucket: aws.String(bucketName),
-					Key:    aws.String(path),
-					Body:   file,
+					Bucket:             aws.String(bucketName),
+					Key:                aws.String(path),
+					Body:               file,
+					ContentType:        aws.String("application/json"),
+					ContentEncoding:    aws.String("gzip"),
+					ContentDisposition: aws.String("inline"),
+					ContentMD5:         aws.String(md5Sum),
 				})
 				if err != nil {
-					log.Println("Error:", err)
+					log.Println("R2 PutObject error:", err)
+					exitCode.Add(1)
 					return
 				}
 			}()
@@ -126,6 +146,7 @@ func main() {
 	})
 
 	if err != nil {
+		exitCode.Add(1)
 		log.Println("Error:", err)
 	}
 
@@ -134,6 +155,25 @@ func main() {
 
 	close(progress)
 
+	os.Exit(int(exitCode.Load()))
+}
+
+func calculateMD5(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", fmt.Errorf("opening a file for md5 calculation failed: %w", err)
+	}
+
+	defer file.Close()
+
+	hash := md5.New()
+	_, err = io.Copy(hash, file)
+
+	if err != nil {
+		return "", fmt.Errorf("reading file for md5 calculation failed: %w", err)
+	}
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 // countFiles counts the total number of files in the given directory (recursively)
