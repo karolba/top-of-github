@@ -2,10 +2,7 @@ package main
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -85,13 +82,6 @@ func main() {
 					wg.Done()
 				}()
 
-				md5Sum, err := calculateMD5(path)
-				if err != nil {
-					log.Printf("Couldn't calculate an md5 checksum for file %s: %v\n", path, err)
-					exitCode.Add(1)
-					return
-				}
-
 				file, err := os.Open(path)
 				if err != nil {
 					log.Println("Error:", err)
@@ -111,7 +101,6 @@ func main() {
 					ContentType:        aws.String("application/json"),
 					ContentEncoding:    aws.String("gzip"),
 					ContentDisposition: aws.String("inline"),
-					ContentMD5:         aws.String(md5Sum),
 				})
 				if err != nil {
 					log.Println("R2 PutObject error:", err)
@@ -135,24 +124,6 @@ func main() {
 	close(progress)
 
 	os.Exit(int(exitCode.Load()))
-}
-
-func calculateMD5(filePath string) (string, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return "", fmt.Errorf("opening a file for md5 calculation failed: %w", err)
-	}
-
-	defer file.Close()
-
-	hash := md5.New()
-	_, err = io.Copy(hash, file)
-
-	if err != nil {
-		return "", fmt.Errorf("reading file for md5 calculation failed: %w", err)
-	}
-
-	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 // countFiles counts the total number of files in the given directory (recursively)
