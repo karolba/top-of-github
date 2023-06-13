@@ -97,6 +97,7 @@ func escapeLanguageName(name string) string {
 	name = strings.ReplaceAll(name, " ", "-")
 	name = strings.ReplaceAll(name, "&", "-")
 	name = strings.ReplaceAll(name, "?", "-")
+	name = strings.ReplaceAll(name, "#", "-sharp-")
 	if name == "" {
 		return "-empty-"
 	}
