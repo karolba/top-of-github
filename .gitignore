@@ -3,3 +3,6 @@
 .idea/
 
 *.private-key.pem
+
+/frontend/node_modules/
+/frontend/static/dist/
