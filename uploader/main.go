@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	maxUploads = 4 // Maximum number of concurrent uploads
+	maxUploads = 16 // Maximum number of concurrent uploads
 )
 
 func cloudflareR2Client() *s3.Client {
