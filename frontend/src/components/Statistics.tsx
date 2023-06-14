@@ -3,7 +3,7 @@ import formatter from "numbuffix"
 import { MetadataReponse } from "../apitypes"
 
 
-export default function statistics(metadata: MetadataReponse) {
+export default function Statistics(metadata: MetadataReponse) {
 	let repos = formatter(metadata.CountOfAllRepos, '')
 	let stars = formatter(metadata.CountOfAllStars, '')
 

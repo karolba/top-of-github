@@ -2,7 +2,7 @@ import { h } from "dom-chef"
 import { MetadataReponse } from "../apitypes"
 
 
-export default function searcher(metadata: MetadataReponse) {
+export default function Searcher(metadata: MetadataReponse) {
     return (
         <div>
             <h3>Searcher</h3>

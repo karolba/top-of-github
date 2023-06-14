@@ -1,20 +1,20 @@
 import { MetadataReponse, ToplistPageResponse } from './apitypes.js';
 import { allLanguagesToplistPage, getMetadata } from './api.js';
-import statistics from './components/statistics.js';
-import searcher from './components/searcher.js';
-import results from './components/results.js';
+import Statistics from './components/Statistics.js';
+import Searcher from './components/Searcher.js';
+import Results from './components/Results.js';
 
 
 function displayStatistics(metadata: MetadataReponse) {
-	document.getElementById('statistics-container')!.replaceChildren(statistics(metadata))
+	document.getElementById('statistics-container')!.replaceChildren(Statistics(metadata))
 }
 
 function displaySearcher(metadata: MetadataReponse) {
-	document.getElementById('searcher-container')!.replaceChildren(searcher(metadata))
+	document.getElementById('searcher-container')!.replaceChildren(Searcher(metadata))
 }
 
 function displayResults(languages: ToplistPageResponse) {
-	document.getElementById('searcher-container')!.replaceChildren(results(languages))
+	document.getElementById('searcher-container')!.replaceChildren(Results(languages))
 }
 
 
