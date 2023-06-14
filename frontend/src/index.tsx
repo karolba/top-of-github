@@ -1,42 +1,15 @@
+import { MetadataReponse, Language } from './apitypes.js';
+import { getMetadata } from './api.js';
+import statistics from './components/statistics.js';
+import searcher from './components/searcher.js';
 
-import { h } from 'dom-chef';
-import { MetadataReponse, Language, ToplistPageResponse } from './apitypes.js';
-
-async function getMetadata(): Promise<MetadataReponse> {
-    let response = await fetch('https://top-of-github-api.baraniecki.eu/metadata.json.gz')
-    return await response.json()
-}
-
-async function languageToplistPage(escapedLanguageName: string, pageNumber: number): Promise<ToplistPageResponse> {
-    let response = await fetch(`https://top-of-github-api.baraniecki.eu/language/${escapedLanguageName}/${pageNumber}.json.gz`)
-    return await response.json()
-}
-
-async function allLanguagesToplistPage(pageNumber: number): Promise<ToplistPageResponse> {
-    let response = await fetch(`https://top-of-github-api.baraniecki.eu/all/${pageNumber}.json.gz`)
-    return await response.json()
-}
 
 function displayStatistics(metadata: MetadataReponse) {
-    document.getElementById('statistics-container')!.appendChild(
-        <div id="statistics" className="my-3 p-3 bg-body rounded shadow-sm">
-            <h3>Statistics</h3>
-            <p>Storing information about <b>{metadata.CountOfAllRepos}</b> repositories with <b>{metadata.CountOfAllStars}</b> stars combined</p>
-        </div>
-    )
+    document.getElementById('statistics-container')!.replaceChildren(statistics(metadata))
 }
 
 function displaySearcher(metadata: MetadataReponse) {
-    document.getElementById('searcher-container')!.appendChild(
-        <div>
-            <h3>Searcher</h3>
-            <ul>
-                {metadata.Languages.map(language => (
-                    <li>{language.Name} - {language.CountOfRepos} repositories with {language.CountOfStars} stars</li>
-                ))}
-            </ul>
-        </div>
-    )
+    document.getElementById('searcher-container')!.replaceChildren(searcher(metadata))
 }
 
 async function run() {

@@ -10,7 +10,8 @@
     "@rollup/plugin-node-resolve": "15.1.0",
     "@rollup/plugin-typescript": "11.1.1",
     "@types/vhtml": "2.2.4",
-    "dom-chef": "^5.1.0",
+    "dom-chef": "5.1.0",
+    "numbuffix": "1.0.3",
     "rollup": "3.25.1",
     "tslib": "2.5.3",
     "typescript": "5.1.3"
