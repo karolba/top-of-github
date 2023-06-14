@@ -4,8 +4,8 @@ import { MetadataReponse } from "../apitypes"
 
 
 export default function Statistics(metadata: MetadataReponse) {
-	let repos = formatter(metadata.CountOfAllRepos, '')
-	let stars = formatter(metadata.CountOfAllStars, '')
+    let repos = formatter(metadata.CountOfAllRepos, '')
+    let stars = formatter(metadata.CountOfAllStars, '')
 
     return (
         <div id="statistics" className="my-3 p-3 bg-body rounded shadow-sm">
