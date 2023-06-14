@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "build": "rollup -p typescript -p node-resolve -p commonjs src/index.ts --file static/dist/bundle.js --sourcemap",
+    "build": "rollup -p typescript -p node-resolve -p commonjs src/index.ts --file static/dist/bundle.js --sourcemap --format iife",
     "build-production": "npm run build -- --compact",
     "watch": "npm run build -- --watch"
   },
