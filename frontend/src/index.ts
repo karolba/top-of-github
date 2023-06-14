@@ -1,21 +1,30 @@
-import { MetadataReponse, Language } from './apitypes.js';
-import { getMetadata } from './api.js';
+import { MetadataReponse, ToplistPageResponse } from './apitypes.js';
+import { allLanguagesToplistPage, getMetadata } from './api.js';
 import statistics from './components/statistics.js';
 import searcher from './components/searcher.js';
+import results from './components/results.js';
 
 
 function displayStatistics(metadata: MetadataReponse) {
-    document.getElementById('statistics-container')!.replaceChildren(statistics(metadata))
+	document.getElementById('statistics-container')!.replaceChildren(statistics(metadata))
 }
 
 function displaySearcher(metadata: MetadataReponse) {
-    document.getElementById('searcher-container')!.replaceChildren(searcher(metadata))
+	document.getElementById('searcher-container')!.replaceChildren(searcher(metadata))
 }
 
+function displayResults(languages: ToplistPageResponse) {
+	document.getElementById('searcher-container')!.replaceChildren(results(languages))
+}
+
+
 async function run() {
-    let metadata = await getMetadata()
-    displayStatistics(metadata)
-    displaySearcher(metadata)
+	let metadata = await getMetadata()
+	displayStatistics(metadata)
+	displaySearcher(metadata)
+
+	let allLanguagesPage1 = await allLanguagesToplistPage(1)
+	displayResults(allLanguagesPage1)
 }
 
 run().catch(error => console.error("Caught an async error: ", error));
