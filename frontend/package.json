@@ -3,7 +3,7 @@
   "scripts": {
     "build": "rollup -p typescript -p node-resolve -p commonjs src/index.ts --file static/dist/bundle.js --sourcemap --format iife",
     "build-production": "npm run build -- --compact",
-    "watch": "npm run build -- --watch"
+    "dev": "npm run build -- --watch -p serve=\\'static\\' -p livereload"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "25.0.1",
@@ -12,6 +12,8 @@
     "dom-chef": "5.1.0",
     "numbuffix": "1.0.3",
     "rollup": "3.25.1",
+    "rollup-plugin-livereload": "2.0.5",
+    "rollup-plugin-serve": "2.0.2",
     "tslib": "2.5.3",
     "typescript": "5.1.3"
   }
