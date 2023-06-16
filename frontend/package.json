@@ -1,8 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "build": "rollup -p typescript -p node-resolve -p commonjs src/index.ts --file static/dist/bundle.js --sourcemap --format iife",
-    "build-production": "npm run build -- --compact",
+    "build": "rollup -p typescript=\"{$TYPESCRIPT_OPTIONS}\" -p node-resolve -p commonjs src/index.ts --file static/dist/bundle.js --sourcemap --format iife",
+    "build-production": "TYPESCRIPT_OPTIONS='noEmitOnError: true' npm run build -- --compact --validate",
     "dev": "npm run build -- --watch -p serve=\\'static\\' -p livereload"
   },
   "devDependencies": {
