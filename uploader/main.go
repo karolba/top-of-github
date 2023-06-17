@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -16,11 +17,13 @@ import (
 )
 
 const (
-	maxUploads = 16 // Maximum number of concurrent uploads
+	maxUploads         = 16              // Maximum number of concurrent uploads
+	retryMaxAttempts   = 4               // Maximum number of retry attempts
+	retrySleepDuration = 1 * time.Second // Duration to wait between retries
 )
 
 func cloudflareR2Client() *s3.Client {
-	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...any) (aws.Endpoint, error) {
+	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
 			URL: fmt.Sprintf("https://%s.r2.cloudflarestorage.com", ACCOUNT_ID),
 		}, nil
@@ -93,19 +96,11 @@ func main() {
 				// Calculate progress
 				progress <- 1
 
-				// Upload file to S3
-				_, err = client.PutObject(context.Background(), &s3.PutObjectInput{
-					Bucket:             aws.String(BUCKET_NAME),
-					Key:                aws.String(path),
-					Body:               file,
-					ContentType:        aws.String("application/json"),
-					ContentEncoding:    aws.String("gzip"),
-					ContentDisposition: aws.String("inline"),
-				})
+				// Upload file to S3 with retry
+				err = retryUpload(client, path, file)
 				if err != nil {
-					log.Println("R2 PutObject error:", err)
+					log.Println("Upload error:", err)
 					exitCode.Add(1)
-					return
 				}
 			}()
 		}
@@ -124,6 +119,33 @@ func main() {
 	close(progress)
 
 	os.Exit(int(exitCode.Load()))
+}
+
+// retryUpload retries the upload operation with a maximum number of attempts
+func retryUpload(client *s3.Client, path string, file *os.File) error {
+	attempt := 1
+	for {
+		_, err := client.PutObject(context.Background(), &s3.PutObjectInput{
+			Bucket:             aws.String(BUCKET_NAME),
+			Key:                aws.String(path),
+			Body:               file,
+			ContentType:        aws.String("application/json"),
+			ContentEncoding:    aws.String("gzip"),
+			ContentDisposition: aws.String("inline"),
+		})
+		if err == nil {
+			return nil
+		}
+
+		if attempt >= retryMaxAttempts {
+			return fmt.Errorf("maximum retry attempts exceeded: %w", err)
+		}
+
+		log.Printf("Upload error (attempt %d): %v. Retrying...", attempt, err)
+
+		attempt++
+		time.Sleep(retrySleepDuration)
+	}
 }
 
 // countFiles counts the total number of files in the given directory (recursively)
