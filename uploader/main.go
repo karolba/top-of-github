@@ -93,15 +93,15 @@ func main() {
 				}
 				defer file.Close()
 
-				// Calculate progress
-				progress <- 1
-
 				// Upload file to S3 with retry
 				err = retryUpload(client, path, file)
 				if err != nil {
 					log.Println("Upload error:", err)
 					exitCode.Add(1)
 				}
+
+				// Calculate progress
+				progress <- 1
 			}()
 		}
 
