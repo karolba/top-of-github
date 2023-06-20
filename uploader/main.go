@@ -58,8 +58,11 @@ func main() {
 	// Create a channel to track progress
 	progress := make(chan int, totalFiles)
 
+	// Ensure the displayProgress goroutine exits
+	progressDone := make(chan struct{})
+
 	// Display progress as a percentage
-	go displayProgress(progress, totalFiles)
+	go displayProgress(progress, totalFiles, progressDone)
 
 	// Create a wait group to ensure all uploads are completed
 	var wg sync.WaitGroup
@@ -118,15 +121,19 @@ func main() {
 
 	close(progress)
 
+	// Wait for displayProgress to end - without this the last "100%" message would
+	// sometimes get lost
+	<-progressDone
+
 	// Quoting os.Exit's documentation:
 	// "For portability, the status code should be in the range [0, 125]."
 	// let's cap the exit code to 125 for that
-	exitWith := exitCode.Load()
+	exitWith := int(exitCode.Load())
 	if exitWith > 125 {
 		exitWith = 125
 	}
 
-	os.Exit(int(exitWith))
+	os.Exit(exitWith)
 }
 
 // retryUpload retries the upload operation with a maximum number of attempts
@@ -181,7 +188,7 @@ func countFiles(directoryPath string) int {
 }
 
 // displayProgress displays the progress as a percentage
-func displayProgress(progress <-chan int, totalFiles int) {
+func displayProgress(progress <-chan int, totalFiles int, done chan<- struct{}) {
 	uploadedFiles := 0
 
 	for p := range progress {
@@ -189,4 +196,7 @@ func displayProgress(progress <-chan int, totalFiles int) {
 		percentage := (float64(uploadedFiles) / float64(totalFiles)) * 100
 		fmt.Printf("Upload progress: %.2f%%\n", percentage)
 	}
+
+	// Tell the main goroutine we are done
+	close(done)
 }
