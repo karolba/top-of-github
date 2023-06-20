@@ -118,7 +118,15 @@ func main() {
 
 	close(progress)
 
-	os.Exit(int(exitCode.Load()))
+	// Quoting os.Exit's documentation:
+	// "For portability, the status code should be in the range [0, 125]."
+	// let's cap the exit code to 125 for that
+	exitWith := exitCode.Load()
+	if exitWith > 125 {
+		exitWith = 125
+	}
+
+	os.Exit(int(exitWith))
 }
 
 // retryUpload retries the upload operation with a maximum number of attempts
