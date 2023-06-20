@@ -5,7 +5,7 @@ log() {
 }
 
 set -a
-source .env
+[[ -f .env ]] && source .env
 set +a
 
 mkdir -p state
