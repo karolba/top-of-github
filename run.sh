@@ -3,13 +3,13 @@
 log_execution() {
 	name="$1"; shift
 
-	echo "`date -I'seconds'`: $name - starting" | tee -a ./event-log.log >> /dev/stderr
+	echo "$(date -I'seconds'): $name - starting" | tee -a ./event-log.log >> /dev/stderr
 	"$@"
-	echo "`date -I'seconds'`: $name - ended with error code $?" | tee -a ./event-log.log >> /dev/stderr
+	echo "$(date -I'seconds'): $name - ended with error code $?" | tee -a ./event-log.log >> /dev/stderr
 }
 
 set -a
-[[ -f .env ]] && source .env
+[ -f .env ] && . ./.env
 set +a
 
 while true; do
