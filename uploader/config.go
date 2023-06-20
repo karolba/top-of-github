@@ -13,10 +13,12 @@ var (
 	ACCESS_KEY_SECRET = haveToGetEnvironmentVariable("R2_ACCESS_KEY_SECRET")
 )
 
-var targetDirectory = flag.String("directory", ".", "A directory to upload")
-var bucketName = flag.String("bucket-name", "", "Target bucket name")
-var contentType = flag.String("content-type", "application/json", "Content-Type for uploaded files")
-var contentEncoding = flag.String("content-encoding", "gzip", "Content-Type for uploaded files")
+var (
+	targetDirectory = flag.String("directory", ".", "A directory to upload")
+	bucketName      = flag.String("bucket-name", "", "Target bucket name")
+	contentType     = flag.String("content-type", "application/json", "Content-Type for uploaded files")
+	contentEncoding = flag.String("content-encoding", "gzip", "Content-Type for uploaded files")
+)
 
 func init() {
 	flag.Parse()
