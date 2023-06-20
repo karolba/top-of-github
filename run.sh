@@ -26,7 +26,7 @@ while true; do
 	log_execution 'uploader' \
 		./uploader \
 			-directory to-upload \
-			-bucket-name "$R2_PUBLIC_BUCKET_NAME"
+			-bucket-name "${R2_PUBLIC_BUCKET_NAME:?}"
 
 	rm -rfv to-upload
 
@@ -42,7 +42,7 @@ while true; do
 
 	log_execution 'uploading compressed database backup' \
 		./uploader \
-			-bucket-name "$R2_DB_BACKUP_BUCKET_NAME" \
+			-bucket-name "${R2_DB_BACKUP_BUCKET_NAME:?}" \
 			-directory to-upload-backup \
 			-content-type application/x-sqlite3
 
