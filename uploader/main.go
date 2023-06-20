@@ -126,11 +126,11 @@ func retryUpload(client *s3.Client, path string, file *os.File) error {
 	attempt := 1
 	for {
 		_, err := client.PutObject(context.Background(), &s3.PutObjectInput{
-			Bucket:             aws.String(BUCKET_NAME),
+			Bucket:             aws.String(*bucketName),
 			Key:                aws.String(path),
 			Body:               file,
-			ContentType:        aws.String("application/json"),
-			ContentEncoding:    aws.String("gzip"),
+			ContentType:        aws.String(*contentType),
+			ContentEncoding:    aws.String(*contentEncoding),
 			ContentDisposition: aws.String("inline"),
 		})
 		if err == nil {
