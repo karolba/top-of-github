@@ -8,6 +8,8 @@ set -a
 source .env
 set +a
 
+mkdir -p state
+
 while true; do
         log "fetcher: starting"
         ./fetcher
