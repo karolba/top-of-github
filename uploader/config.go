@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 )
@@ -24,7 +23,7 @@ func init() {
 	flag.Parse()
 
 	if bucketName == nil || *bucketName == "" {
-		fmt.Println("Error: The -bucket-name parameter is mandatory")
+		log.Println("Error: The -bucket-name parameter is mandatory")
 		os.Exit(1)
 	}
 }
@@ -32,10 +31,12 @@ func init() {
 func haveToGetEnvironmentVariable(name string) string {
 	val, ok := os.LookupEnv(name)
 	if !ok {
-		log.Panicf("Missing required environment variable %s\n", name)
+		log.Printf("Missing required environment variable %s\n", name)
+		os.Exit(1)
 	}
 	if val == "" {
-		log.Panicf("Required environment variable %s is empty\n", name)
+		log.Printf("Required environment variable %s is empty\n", name)
+		os.Exit(1)
 	}
 	return val
 }
