@@ -173,7 +173,7 @@ func retrieveAndSaveAll(columnNames []string, pageSize int, offset int, page int
 	}
 	defer closeOrPanic(rows)
 
-	fileName := fmt.Sprintf("%s/all/%d.json.gz", *outputDir, page)
+	fileName := fmt.Sprintf("%s/all/%d", *outputDir, page)
 
 	records := rowsAsRecords(rows, columnNames)
 
@@ -198,7 +198,7 @@ func retrieveAndSaveByLanguage(columnNames []string, pageSize int, offset int, p
 	}
 	defer closeOrPanic(rows)
 
-	fileName := fmt.Sprintf("%s/language/%s/%d.json.gz", *outputDir, escapeLanguageName(language), page)
+	fileName := fmt.Sprintf("%s/language/%s/%d", *outputDir, escapeLanguageName(language), page)
 
 	records := rowsAsRecords(rows, columnNames)
 

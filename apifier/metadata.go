@@ -82,5 +82,5 @@ func saveMetadata() {
 		log.Fatal(err)
 	}
 
-	go saveDataToGzipFile(fmt.Sprintf("%s/metadata.json.gz", *outputDir), jsonData)
+	go saveDataToGzipFile(fmt.Sprintf("%s/metadata", *outputDir), jsonData)
 }
