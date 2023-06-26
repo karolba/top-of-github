@@ -15,7 +15,7 @@ import (
 
 var db *sql.DB
 
-const JSON_PAGINATION_PAGE_SIZE = 5000
+const JSON_PAGINATION_PAGE_SIZE = 1000
 
 type Record map[string]any
 
