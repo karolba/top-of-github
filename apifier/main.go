@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"code.gitea.io/gitea/modules/emoji"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -161,6 +162,25 @@ func exportForLanguage(language string, columnNames []string) {
 	}
 }
 
+// emojify renders all repository description emojis into unicode emojis
+// For example: turns Description=":rocket: LGTM" into Description="🚀 LGTM"
+func emojify(records []Record) []Record {
+	for i, record := range records {
+		description, ok := record["Description"]
+		if !ok {
+			continue
+		}
+
+		desc, ok := description.(string)
+		if !ok {
+			continue
+		}
+
+		records[i]["Description"] = emoji.ReplaceAliases(desc)
+	}
+	return records
+}
+
 func retrieveAndSaveAll(columnNames []string, pageSize int, offset int, page int) (shouldContinue bool) {
 	// Retrieve data from the database with pagination
 	rows, err := db.Query(`
@@ -176,6 +196,7 @@ func retrieveAndSaveAll(columnNames []string, pageSize int, offset int, page int
 	fileName := fmt.Sprintf("%s/all/%d", *outputDir, page)
 
 	records := rowsAsRecords(rows, columnNames)
+	records = emojify(records)
 
 	go saveToFile(fileName, records)
 
@@ -201,6 +222,7 @@ func retrieveAndSaveByLanguage(columnNames []string, pageSize int, offset int, p
 	fileName := fmt.Sprintf("%s/language/%s/%d", *outputDir, escapeLanguageName(language), page)
 
 	records := rowsAsRecords(rows, columnNames)
+	records = emojify(records)
 
 	go saveToFile(fileName, records)
 

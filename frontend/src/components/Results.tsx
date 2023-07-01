@@ -1,8 +1,6 @@
 import { h } from "dom-chef"
 import { Repository } from "../apitypes"
 
-import { emojify } from '@twuni/emojify';
-
 function addQueryParam(url: URL, param: string, value: string): URL {
     const params = new URLSearchParams(url.search);
   
@@ -87,7 +85,7 @@ function Repo(repo: Repository): JSX.Element {
                     <> / </>
                     <a href={repo.GithubLink} className="fw-bold">{repo.Name}</a>
                 </div>
-                {emojify(repo.Description)}
+                {repo.Description}
                 {repo.Homepage
                     ? <> - <a href={repo.Homepage}>{repo.Homepage}</a></>
                     : <></>
