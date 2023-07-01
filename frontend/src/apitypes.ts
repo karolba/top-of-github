@@ -1,6 +1,7 @@
 export interface MetadataReponse {
     CountOfAllRepos: number
     CountOfAllStars: number
+    AllReposPages: number
     Languages: Language[]
 }
 
@@ -9,6 +10,7 @@ export interface Language {
     EscapedName: string
     CountOfRepos: number
     CountOfStars: number
+    Pages: number
 }
 
 export type ToplistPageResponse = Repository[]

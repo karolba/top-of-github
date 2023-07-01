@@ -13,12 +13,18 @@ type Language struct {
 	EscapedName  string
 	CountOfRepos int64
 	CountOfStars int64
+	Pages        int64
 }
 
 type Metadata struct {
 	CountOfAllRepos int64
+	AllReposPages   int64
 	CountOfAllStars int64
 	Languages       []Language
+}
+
+func numberOfPages(items int64) int64 {
+	return (items + JSON_PAGINATION_PAGE_SIZE - 1) / JSON_PAGINATION_PAGE_SIZE
 }
 
 func saveMetadata() {
@@ -63,6 +69,7 @@ func saveMetadata() {
 			EscapedName:  escapeLanguageName(languageName),
 			CountOfRepos: countOfRepos,
 			CountOfStars: countOfStars,
+			Pages:        numberOfPages(countOfRepos),
 		})
 	}
 	if err = rows.Err(); err != nil {
@@ -73,6 +80,7 @@ func saveMetadata() {
 	data := Metadata{
 		CountOfAllRepos: countOfAllRepos,
 		CountOfAllStars: countOfAllStars,
+		AllReposPages:   numberOfPages(countOfAllRepos),
 		Languages:       languages,
 	}
 
