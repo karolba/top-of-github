@@ -4,16 +4,25 @@ import Statistics from './components/Statistics.js';
 import Searcher from './components/Searcher.js';
 import Results from './components/Results.js';
 import LoadingSpinner from './components/LoadingSpinner.js';
+import ResultsError from './components/ResultsError.js';
 
 async function resultsForAllLanguages(page: number): Promise<void> {
-    displayLoadingSpinner()
-    let allLanguagesPage = await allLanguagesToplistPage(page)
-    displayResults(allLanguagesPage)
+    try {
+        displayLoadingSpinner()
+        let allLanguagesPage = await allLanguagesToplistPage(page)
+        displayResults(allLanguagesPage)
+    } catch(e: any) {
+        displayResultsError(e)
+    }
 }
 async function resultsForLanguage(language: Language, page: number): Promise<void> {
-    displayLoadingSpinner()
-    let allLanguagesPage = await languageToplistPage(language.EscapedName, page)
-    displayResults(allLanguagesPage)
+    try {
+        displayLoadingSpinner()
+        let pageResults = await languageToplistPage(language.EscapedName, page)
+        displayResults(pageResults)
+    } catch(e: any) {
+        displayResultsError(e)
+    }
 }
 
 function displayStatistics(metadata: MetadataReponse): void {
@@ -45,6 +54,10 @@ function displayResults(languages: ToplistPageResponse): void {
 
 function displayLoadingSpinner(): void {
     document.getElementById('results-container')!.replaceChildren(LoadingSpinner())
+}
+
+function displayResultsError(error: any): void {
+    document.getElementById('results-container')!.replaceChildren(ResultsError(error))
 }
 
 async function run(): Promise<void> {
