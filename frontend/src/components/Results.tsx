@@ -114,7 +114,6 @@ function Repo(repo: Repository): JSX.Element {
 export default function Results(repositories: Repository[]): JSX.Element {
     return (
         <div>
-            <h3>Results</h3>
             <ul className="list-group">
                 {repositories.map(Repo)}
             </ul>
