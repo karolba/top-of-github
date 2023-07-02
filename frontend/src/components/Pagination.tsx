@@ -46,7 +46,7 @@ export default function Pagination(page: number, pages: number, onPageChange: (n
                         pageNumber == '...'
                         ?
                             <li className="page-item disabled">
-                                <a className="page-link" href="#" tabIndex={-1}>&mldr;</a>
+                                <a className="page-link" href="#" tabIndex={-1}>...</a>
                             </li>
                         : pageNumber == page
                         ?
