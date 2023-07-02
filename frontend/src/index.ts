@@ -105,4 +105,7 @@ async function run(): Promise<void> {
     }
 }
 
-run().catch(error => console.error("Caught an async error: ", error));
+run().catch(error => {
+    console.error("Caught an async error: ", error)
+    displayResultsError(error)
+});
