@@ -1,8 +1,8 @@
 import { h } from "dom-chef"
-import { MetadataReponse } from "../apitypes"
+import { MetadataReponse, Language } from "../apitypes"
 
 
-export default function Searcher(metadata: MetadataReponse): JSX.Element {
+export default function Searcher(metadata: MetadataReponse, selectedLanguage: Language|null): JSX.Element {
     console.log("Searcher metadata", metadata)
 
     let languages = [
@@ -21,7 +21,7 @@ export default function Searcher(metadata: MetadataReponse): JSX.Element {
                 <div className="col-md-6">
                     <select id="searcher" className="selectpicker" data-live-search="true" data-width="100%">
                         {languages.map(language => 
-                            <option data-subtext={` ${language.CountOfRepos} repos`}>
+                            <option data-subtext={` ${language.CountOfRepos} repos`} selected={language == selectedLanguage}>
                                 {language.Name ? language.Name : '(no language)'}
                             </option>
                         )}

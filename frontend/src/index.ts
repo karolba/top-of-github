@@ -41,8 +41,8 @@ function displayStatistics(metadata: MetadataReponse): void {
     document.getElementById('statistics-container')!.replaceChildren(Statistics(metadata))
 }
 
-function displaySearcher(metadata: MetadataReponse): void {
-    document.getElementById('searcher-container')!.replaceChildren(Searcher(metadata))
+function displaySearcher(metadata: MetadataReponse, language: Language | null): void {
+    document.getElementById('searcher-container')!.replaceChildren(Searcher(metadata, language))
 
     let jQuerySearcher = jQuery('select#searcher')
     jQuerySearcher.selectpicker({ showSubtext: true });
@@ -83,21 +83,25 @@ function isValidPageNumber(pageNumber: number, pages: number): Boolean {
 async function run(): Promise<void> {
     let metadata = await getMetadata()
     displayStatistics(metadata)
-    displaySearcher(metadata)
 
     let hash = window.location.hash.replace(/^#/, '')
 
     if(startsWithNumber(hash) && isValidPageNumber(parseInt(hash, 10), metadata.AllReposPages)) {
+        displaySearcher(metadata, null)
         resultsForAllLanguages(parseInt(hash, 10), metadata.AllReposPages)
     } else {
         let [languageName, page] = hash.split('/')
         let language = metadata.Languages.find(language => language.EscapedName == languageName)
-        if(language && page && isValidPageNumber(parseInt(page, 10), language.Pages))
+        if(language && page && isValidPageNumber(parseInt(page, 10), language.Pages)) {
+            displaySearcher(metadata, language)
             resultsForLanguage(language, parseInt(page, 10))
-        else if(language)
+        } else if(language) {
+            displaySearcher(metadata, language)
             resultsForLanguage(language, 1)
-        else
+        } else {
+            displaySearcher(metadata, null)
             resultsForAllLanguages(1,  metadata.AllReposPages)
+        }
     }
 }
 
