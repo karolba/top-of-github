@@ -6,20 +6,28 @@ import Results from './components/Results.js';
 import LoadingSpinner from './components/LoadingSpinner.js';
 import ResultsError from './components/ResultsError.js';
 
-async function resultsForAllLanguages(page: number): Promise<void> {
+async function resultsForAllLanguages(page: number, pages: number): Promise<void> {
     try {
         displayLoadingSpinner()
         let allLanguagesPage = await allLanguagesToplistPage(page)
-        displayResults(allLanguagesPage)
+
+        let onPageChange = (newPage: number) => {
+            resultsForAllLanguages(newPage, pages)
+        }
+        displayResults(allLanguagesPage, page, pages, onPageChange)
     } catch(e: any) {
         displayResultsError(e)
     }
 }
-async function resultsForLanguage(language: Language, page: number): Promise<void> {
+async function resultsForLanguage(language: Language, page: number, pages: number): Promise<void> {
     try {
         displayLoadingSpinner()
         let pageResults = await languageToplistPage(language.EscapedName, page)
-        displayResults(pageResults)
+
+        let onPageChange = (newPage: number) => {
+            resultsForLanguage(language, newPage, pages)
+        }
+        displayResults(pageResults, page, pages, onPageChange)
     } catch(e: any) {
         displayResultsError(e)
     }
@@ -40,16 +48,16 @@ function displaySearcher(metadata: MetadataReponse): void {
         }
 
         if(clickedIndex == 0) {
-            resultsForAllLanguages(1)
+            resultsForAllLanguages(1, metadata.AllReposPages)
         } else {
             let selected = metadata.Languages[clickedIndex - 1]
-            resultsForLanguage(selected, 1)
+            resultsForLanguage(selected, 1, selected.Pages)
         }
     });
 }
 
-function displayResults(languages: ToplistPageResponse): void {
-    document.getElementById('results-container')!.replaceChildren(Results(languages))
+function displayResults(languages: ToplistPageResponse, page: number, pages: number, onPageChange: (page: number) => void): void {
+    document.getElementById('results-container')!.replaceChildren(Results(languages, page, pages, onPageChange))
 }
 
 function displayLoadingSpinner(): void {
@@ -64,7 +72,7 @@ async function run(): Promise<void> {
     let metadata = await getMetadata()
     displayStatistics(metadata)
     displaySearcher(metadata)
-    resultsForAllLanguages(1)
+    resultsForAllLanguages(1, metadata.AllReposPages)
 }
 
 run().catch(error => console.error("Caught an async error: ", error));
