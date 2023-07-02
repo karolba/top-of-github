@@ -1,9 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "build": "rollup -p typescript=\"{$TYPESCRIPT_OPTIONS}\" -p node-resolve -p commonjs src/index.ts --file static/dist/bundle.js --sourcemap --format iife",
-    "build-production": "TYPESCRIPT_OPTIONS='noEmitOnError: true' npm run build -- --compact --validate",
-    "dev": "npm run build -- --watch -p serve=\\'static\\' -p livereload"
+    "build-production": "rollup -c rollup.config.ts --configPlugin typescript --environment BUILD:PRODUCTION",
+    "dev": "rollup -c rollup.config.ts --configPlugin typescript --environment BUILD:DEV --watch"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "25.0.1",
@@ -11,6 +10,7 @@
     "@rollup/plugin-typescript": "11.1.1",
     "@types/bootstrap-select": "1.13.4",
     "@types/jquery": "3.5.16",
+    "@types/node": "20.3.3",
     "dom-chef": "5.1.0",
     "numbuffix": "1.0.3",
     "rollup": "3.25.1",
