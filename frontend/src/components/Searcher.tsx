@@ -20,8 +20,11 @@ export default function Searcher(metadata: MetadataReponse, selectedLanguage: La
                 <div className="col-md-3"></div>
                 <div className="col-md-6">
                     <select id="searcher" className="selectpicker" data-live-search="true" data-width="100%">
-                        {languages.map(language => 
-                            <option data-subtext={` ${language.CountOfRepos} repos`} selected={language == selectedLanguage}>
+                        {languages.map(language =>
+                            <option
+                                data-subtext={` ${language.CountOfRepos} ${language.CountOfRepos == 1 ? 'repo' : 'repos'}`}
+                                selected={language == selectedLanguage}>
+
                                 {language.Name ? language.Name : '(no language)'}
                             </option>
                         )}
