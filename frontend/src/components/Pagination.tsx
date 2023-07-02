@@ -10,8 +10,8 @@ function range(n: number): Array<number> {
 
 export default function Pagination(page: number, pages: number, onPageChange: (newPage: number) => void): JSX.Element {
     return (
-        <nav aria-label="Results navigation">
-            <ul className="pagination flex-wrap">
+        <nav aria-label="Results navigation" className="pt-2">
+            <ul className="pagination flex-wrap justify-content-center">
                 <li className={`page-item ${page == 1 ? 'disabled' : ''}`}>
                     <a className="page-link" href="#" onClick={(ev)=>{ ev.preventDefault(); onPageChange(1) }}>Previous</a>
                 </li>
