@@ -82,12 +82,12 @@ function Repo(repo: Repository): JSX.Element {
             </div>
             <div className="ms-md-2 w-100">
                 <div className="d-md-flex">
-                    <div className="me-auto">
+                    <div className="me-auto" style={{overflowWrap: "anywhere"}}>
                         <a href={githubAccountLink(repo.OwnerLogin)}>{repo.OwnerLogin}</a>
                         <> / </>
                         <a href={repo.GithubLink} className="fw-bold">{repo.Name}</a>
                     </div>
-                    <div>
+                    <div className="text-md-end">
                         {repo.Language
                             ? <span className="badge bg-primary rounded-pill m-1">{repo.Language}</span>
                             : <></>
