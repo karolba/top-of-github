@@ -80,11 +80,29 @@ function Repo(repo: Repository): JSX.Element {
                     src={addQueryParam(new URL(repo.OwnerAvatarUrl), 's', `${AVATAR_SIZE_PX * 2}`).toString()}
                 ></img>
             </div>
-            <div className="ms-2 me-auto">
-                <div>
-                    <a href={githubAccountLink(repo.OwnerLogin)}>{repo.OwnerLogin}</a>
-                    <> / </>
-                    <a href={repo.GithubLink} className="fw-bold">{repo.Name}</a>
+            <div className="ms-2 w-100">
+                <div className="d-md-flex">
+                    <div className="me-auto">
+                        <a href={githubAccountLink(repo.OwnerLogin)}>{repo.OwnerLogin}</a>
+                        <> / </>
+                        <a href={repo.GithubLink} className="fw-bold">{repo.Name}</a>
+                    </div>
+                    <div>
+                        {repo.Language
+                            ? <span className="badge bg-primary rounded-pill m-1">{repo.Language}</span>
+                            : <></>
+                        }
+                        {repo.Archived
+                            ? <span className="badge bg-warning text-dark rounded-pill m-1">Archived</span>
+                            : <></>
+                        }
+                        {lastPushedToBadge}
+                        {createdAtBadge}
+                        {repo.LicenseSpdxId && repo.LicenseSpdxId != 'NOASSERTION'
+                            ? <span className="badge bg-info text-dark rounded-pill m-1">{repo.LicenseSpdxId}</span>
+                            : <></>
+                        }
+                    </div>
                 </div>
                 {repo.Description}
                 {repo.Homepage
@@ -92,20 +110,6 @@ function Repo(repo: Repository): JSX.Element {
                     : <></>
                 }
             </div>
-            {repo.Language
-                ? <span className="badge bg-primary rounded-pill m-1">{repo.Language}</span>
-                : <></>
-            }
-            {repo.Archived
-                ? <span className="badge bg-warning text-dark rounded-pill m-1">Archived</span>
-                : <></>
-            }
-            {lastPushedToBadge}
-            {createdAtBadge}
-            {repo.LicenseSpdxId && repo.LicenseSpdxId != 'NOASSERTION'
-                ? <span className="badge bg-info text-dark rounded-pill m-1">{repo.LicenseSpdxId}</span>
-                : <></>
-            }
         </li>
     )
 }
