@@ -24,6 +24,7 @@ COPY fetcher/*.go .
 RUN CGO_ENABLED=1 go build -v -o fetcher --ldflags '-linkmode external -extldflags "-static"'
 
 FROM alpine:${ALPINE_VERSION} AS runner
+RUN apk add --no-cache --update sqlite
 WORKDIR /top-of-github
 COPY --from=apifier-builder /build/apifier .
 COPY --from=fetcher-builder /build/fetcher .
