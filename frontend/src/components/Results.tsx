@@ -73,14 +73,14 @@ function Repo(repo: Repository): JSX.Element {
                 <b>{repo.Stargazers}</b>
                 <small className="text-secondary">stargazers</small>
             </div>
-            <div className="d-flex flex-column align-items-center ms-2">
+            <div className="d-flex flex-column align-items-center ms-md-2">
                 <img
                     width={AVATAR_SIZE_PX}
                     height={AVATAR_SIZE_PX}
                     src={addQueryParam(new URL(repo.OwnerAvatarUrl), 's', `${AVATAR_SIZE_PX * 2}`).toString()}
                 ></img>
             </div>
-            <div className="ms-2 w-100">
+            <div className="ms-md-2 w-100">
                 <div className="d-md-flex">
                     <div className="me-auto">
                         <a href={githubAccountLink(repo.OwnerLogin)}>{repo.OwnerLogin}</a>
