@@ -5,7 +5,7 @@
 *.private-key.pem
 
 /frontend/node_modules/
-/frontend/static/dist/
+/frontend/dist/
 
 /apifier/apifier
 /dev-api-server/dev-api-server
