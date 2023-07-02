@@ -13,7 +13,7 @@ export default function Pagination(page: number, pages: number, onPageChange: (n
         <nav aria-label="Results navigation">
             <ul className="pagination flex-wrap">
                 <li className={`page-item ${page == 1 ? 'disabled' : ''}`}>
-                    <a className="page-link" href="#" onClick={()=>onPageChange(1)}>Previous</a>
+                    <a className="page-link" href="#" onClick={(ev)=>{ ev.preventDefault(); onPageChange(1) }}>Previous</a>
                 </li>
                 {range(pages)
                     .map(pageNumber => pageNumber + 1) // Page numbers start at 1 to be more human-friendly
@@ -25,12 +25,12 @@ export default function Pagination(page: number, pages: number, onPageChange: (n
                             </li>
                         :
                             <li className="page-item">
-                                <a className="page-link" href="#" onClick={()=>onPageChange(pageNumber)}>{pageNumber}</a>
+                                <a className="page-link" href="#" onClick={(ev)=>{ ev.preventDefault(); onPageChange(pageNumber) }}>{pageNumber}</a>
                             </li>
                     )
                 }
                 <li className={`page-item ${page >= pages ? 'disabled' : ''}`}>
-                    <a className="page-link" href="#" onClick={()=>onPageChange(pages)}>Next</a>
+                    <a className="page-link" href="#" onClick={(ev)=>{ ev.preventDefault(); onPageChange(pages) }}>Next</a>
                 </li>
             </ul>
         </nav>

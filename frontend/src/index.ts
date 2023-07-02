@@ -7,6 +7,8 @@ import LoadingSpinner from './components/LoadingSpinner.js';
 import ResultsError from './components/ResultsError.js';
 
 async function resultsForAllLanguages(page: number, pages: number): Promise<void> {
+    window.location.hash = `${page}`
+
     try {
         displayLoadingSpinner()
         let allLanguagesPage = await allLanguagesToplistPage(page)
@@ -19,15 +21,17 @@ async function resultsForAllLanguages(page: number, pages: number): Promise<void
         displayResultsError(e)
     }
 }
-async function resultsForLanguage(language: Language, page: number, pages: number): Promise<void> {
+async function resultsForLanguage(language: Language, page: number): Promise<void> {
+    window.location.hash = `${language.EscapedName}/${page}`
+
     try {
         displayLoadingSpinner()
         let pageResults = await languageToplistPage(language.EscapedName, page)
 
         let onPageChange = (newPage: number) => {
-            resultsForLanguage(language, newPage, pages)
+            resultsForLanguage(language, newPage)
         }
-        displayResults(pageResults, page, pages, onPageChange)
+        displayResults(pageResults, page, language.Pages, onPageChange)
     } catch(e: any) {
         displayResultsError(e)
     }
@@ -51,7 +55,7 @@ function displaySearcher(metadata: MetadataReponse): void {
             resultsForAllLanguages(1, metadata.AllReposPages)
         } else {
             let selected = metadata.Languages[clickedIndex - 1]
-            resultsForLanguage(selected, 1, selected.Pages)
+            resultsForLanguage(selected, 1)
         }
     });
 }
@@ -68,11 +72,33 @@ function displayResultsError(error: any): void {
     document.getElementById('results-container')!.replaceChildren(ResultsError(error))
 }
 
+function startsWithNumber(str: string): Boolean {
+    return !!/^[0-9]/.test(str)
+}
+
+function isValidPageNumber(pageNumber: number, pages: number): Boolean {
+    return pageNumber > 0 && pageNumber <= pages
+}
+
 async function run(): Promise<void> {
     let metadata = await getMetadata()
     displayStatistics(metadata)
     displaySearcher(metadata)
-    resultsForAllLanguages(1, metadata.AllReposPages)
+
+    let hash = window.location.hash.replace(/^#/, '')
+
+    if(startsWithNumber(hash) && isValidPageNumber(parseInt(hash, 10), metadata.AllReposPages)) {
+        resultsForAllLanguages(parseInt(hash, 10), metadata.AllReposPages)
+    } else {
+        let [languageName, page] = hash.split('/')
+        let language = metadata.Languages.find(language => language.EscapedName == languageName)
+        if(language && page && isValidPageNumber(parseInt(page, 10), language.Pages))
+            resultsForLanguage(language, parseInt(page, 10))
+        else if(language)
+            resultsForLanguage(language, 1)
+        else
+            resultsForAllLanguages(1,  metadata.AllReposPages)
+    }
 }
 
 run().catch(error => console.error("Caught an async error: ", error));
