@@ -2,21 +2,53 @@ import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import serve from 'rollup-plugin-serve';
-import { RollupOptions } from 'rollup';
+import html from '@rollup/plugin-html';
+import del from 'rollup-plugin-delete';
+import copy from 'rollup-plugin-copy';
+import { InputPluginOption, RollupOptions } from 'rollup';
+import { readFileSync } from 'fs';
 
 const commonConfig: RollupOptions = {
     input: 'src/index.ts',
     output: {
-        file: 'static/dist/bundle.js',
+        dir: 'dist',
         format: 'iife',
         sourcemap: true,
         validate: true,
-        compact: true
+        compact: true,
+        entryFileNames: '[name]-[hash].js',
     },
 };
 
+const commonPlugins: InputPluginOption[] = [
+    del({
+        targets: 'dist/',
+        runOnce: true,
+        verbose: true,
+    }),
+    nodeResolve(),
+    commonjs(),
+    html({
+        publicPath: '/',
+        template(options): string {
+            const scripts = (options?.files.js || []).map(({ fileName }) => `<script src="${options?.publicPath}${fileName}"></script>`)
+            const links = (options?.files.css || []).map(({ fileName }) => `<link href="${options?.publicPath}${fileName}" rel="stylesheet">`)
+
+            return readFileSync('src/index-template.html')
+                .toString()
+                .replace('${links}', links.join('\n'))
+                .replace('${scripts}', scripts.join('\n'))
+        },
+    }),
+    copy({
+        targets: [
+            { src: 'static/*', dest: 'dist/' }
+        ]
+    })
+]
+
 const configurations: Record<string, () => Promise<RollupOptions>> = {
-    DEV: async function (): Promise<RollupOptions> {
+    async DEV(): Promise<RollupOptions> {
         // Livereload cannot be imported on the top of the file, because it spawns
         // an external process on import and that makes the "PRODUCTION" config unable
         // to ever finish, hanging forever.
@@ -26,26 +58,25 @@ const configurations: Record<string, () => Promise<RollupOptions>> = {
         return {
             ...commonConfig,
             watch: {
-                exclude: 'static/dist'
+                include: ['static/**', 'src/**', '*.ts'],
+                exclude: 'dist',
             },
             plugins: [
                 typescript(),
-                nodeResolve(),
-                commonjs(),
+                ...commonPlugins,
                 serve({
-                    contentBase: 'static',
+                    contentBase: 'dist',
                 }),
                 livereload.default(),
             ],
         };
     },
-    PRODUCTION: async function (): Promise<RollupOptions> {
+    async PRODUCTION(): Promise<RollupOptions> {
         return {
             ...commonConfig,
             plugins: [
                 typescript({ noEmitOnError: true }),
-                nodeResolve(),
-                commonjs(),
+                ...commonPlugins,
             ],
         };
     },

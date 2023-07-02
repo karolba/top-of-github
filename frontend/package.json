@@ -6,6 +6,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "25.0.1",
+    "@rollup/plugin-html": "1.0.2",
     "@rollup/plugin-node-resolve": "15.1.0",
     "@rollup/plugin-typescript": "11.1.1",
     "@types/bootstrap-select": "1.13.4",
@@ -14,6 +15,8 @@
     "dom-chef": "5.1.0",
     "numbuffix": "1.0.3",
     "rollup": "3.25.1",
+    "rollup-plugin-copy": "3.4.0",
+    "rollup-plugin-delete": "2.0.0",
     "rollup-plugin-livereload": "2.0.5",
     "rollup-plugin-serve": "2.0.2",
     "tslib": "2.5.3",

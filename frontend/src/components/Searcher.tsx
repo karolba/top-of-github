@@ -3,8 +3,6 @@ import { MetadataReponse, Language } from "../apitypes"
 
 
 export default function Searcher(metadata: MetadataReponse, selectedLanguage: Language|null): JSX.Element {
-    console.log("Searcher metadata", metadata)
-
     let languages = [
         {
             Name: "All languages",
