@@ -1,7 +1,7 @@
 import { h } from "dom-chef"
 
 
-export default function Statistics(): JSX.Element {
+export default function LoadingSpinner(): JSX.Element {
 
     return (
         <div className="text-center">
