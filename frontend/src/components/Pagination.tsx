@@ -23,8 +23,12 @@ function insertEllipsis(arr: number[]): (number | string)[] {
 
 export default function Pagination(page: number, pages: number, onPageChange: (newPage: number) => void): JSX.Element {
     let showNPagesAroundCurrent = 6
+    
+    // Show more pages around the current one if it's near the start
     if(page < showNPagesAroundCurrent)
         showNPagesAroundCurrent += showNPagesAroundCurrent - page;
+
+    // Show more pages around the current one if it's near the end
     if(pages - page < showNPagesAroundCurrent)
         showNPagesAroundCurrent += showNPagesAroundCurrent - (pages - page);
 
@@ -36,7 +40,7 @@ export default function Pagination(page: number, pages: number, onPageChange: (n
     console.log(displayPagesWithEllipsis)
 
     return (
-        <nav aria-label="Results navigation" className="pt-2">
+        <nav aria-label="Results navigation" className="pt-3 pb-1">
             <ul className="pagination flex-wrap justify-content-center">
                 <li className={`page-item ${page == 1 ? 'disabled' : ''}`}>
                     <a className="page-link" href="#" onClick={(ev)=>{ ev.preventDefault(); onPageChange(1) }}>Previous</a>
