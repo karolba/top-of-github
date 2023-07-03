@@ -14,7 +14,7 @@ export default function Searcher(metadata: MetadataReponse, selectedLanguage: La
 
     return (
         <>
-            <div className="row m-3">
+            <div className="row m-3 pt-3">
                 <div className="col-md-3"></div>
                 <div className="col-md-6">
                     <select id="searcher" className="selectpicker" data-live-search="true" data-width="100%">

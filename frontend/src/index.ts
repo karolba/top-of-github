@@ -10,7 +10,7 @@ async function resultsForAllLanguages(page: number, pages: number): Promise<void
     window.location.hash = `${page}`
 
     try {
-        displayLoadingSpinner()
+        displayResultsLoadingSpinner()
         let allLanguagesPage = await allLanguagesToplistPage(page)
 
         let onPageChange = (newPage: number) => {
@@ -25,7 +25,7 @@ async function resultsForLanguage(language: Language, page: number): Promise<voi
     window.location.hash = `${language.EscapedName}/${page}`
 
     try {
-        displayLoadingSpinner()
+        displayResultsLoadingSpinner()
         let pageResults = await languageToplistPage(language.EscapedName, page)
 
         let onPageChange = (newPage: number) => {
@@ -39,6 +39,10 @@ async function resultsForLanguage(language: Language, page: number): Promise<voi
 
 function displayStatistics(metadata: MetadataReponse): void {
     document.getElementById('statistics-container')!.replaceChildren(Statistics(metadata))
+}
+
+function displayStatisticsLoadingSpinner(): void {
+    document.getElementById('statistics-container')!.replaceChildren(LoadingSpinner())
 }
 
 function displaySearcher(metadata: MetadataReponse, language: Language | null): void {
@@ -64,7 +68,7 @@ function displayResults(languages: ToplistPageResponse, page: number, pages: num
     document.getElementById('results-container')!.replaceChildren(Results(languages, page, pages, onPageChange))
 }
 
-function displayLoadingSpinner(): void {
+function displayResultsLoadingSpinner(): void {
     document.getElementById('results-container')!.replaceChildren(LoadingSpinner())
 }
 
@@ -81,6 +85,7 @@ function isValidPageNumber(pageNumber: number, pages: number): Boolean {
 }
 
 async function run(): Promise<void> {
+    displayStatisticsLoadingSpinner();
     let metadata = await getMetadata()
     displayStatistics(metadata)
 
