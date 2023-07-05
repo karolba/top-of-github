@@ -34,8 +34,8 @@ export function displaySearcher(metadata: MetadataReponse, language: Language | 
     });
 }
 
-export function displayResults(languages: ToplistPageResponse, page: number, pages: number, onPageChange: (page: number) => void): void {
-    document.getElementById('results-container')!.replaceChildren(Results(languages, page, pages, onPageChange));
+export function displayResults(repositories: ToplistPageResponse, page: number, pages: number, onPageChange: (page: number) => void): void {
+    document.getElementById('results-container')!.replaceChildren(Results(repositories, page, pages, onPageChange));
 }
 
 export function displayResultsLoadingSpinner(): void {
