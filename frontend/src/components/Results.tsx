@@ -1,6 +1,7 @@
 import { h } from "dom-chef"
 import { Repository } from "../apitypes"
 import Pagination from "./Pagination";
+import { ScrollPositionSavingLink } from "../scrollPosition";
 
 function addQueryParam(url: URL, param: string, value: string): URL {
     const params = new URLSearchParams(url.search);
@@ -83,9 +84,9 @@ function Repo(repo: Repository): JSX.Element {
             <div className="ms-md-2 w-100">
                 <div className="d-md-flex">
                     <div className="me-auto" style={{overflowWrap: "anywhere"}}>
-                        <a href={githubAccountLink(repo.OwnerLogin)}>{repo.OwnerLogin}</a>
+                        <ScrollPositionSavingLink href={githubAccountLink(repo.OwnerLogin)}>{repo.OwnerLogin}</ScrollPositionSavingLink>
                         <> / </>
-                        <a href={repo.GithubLink} className="fw-bold">{repo.Name}</a>
+                        <ScrollPositionSavingLink href={repo.GithubLink} className="fw-bold">{repo.Name}</ScrollPositionSavingLink>
                     </div>
                     <div className="text-md-end">
                         {repo.Language
@@ -106,7 +107,7 @@ function Repo(repo: Repository): JSX.Element {
                 </div>
                 {repo.Description}
                 {repo.Homepage
-                    ? <> - <a href={repo.Homepage}>{repo.Homepage}</a></>
+                    ? <> - <ScrollPositionSavingLink href={repo.Homepage}>{repo.Homepage}</ScrollPositionSavingLink></>
                     : <></>
                 }
             </div>

@@ -2,6 +2,7 @@ import { allLanguagesToplistPage, getMetadata, languageToplistPage } from './api
 import { Language, MetadataReponse } from './apitypes.js';
 import { displayResultsLoadingSpinner, displayResults, displayResultsError, displayStatisticsLoadingSpinner, displayStatistics, displaySearcher } from './views.js';
 import { goToAllLanguagesResults, goToOneLanguagesResults, routeFromHash } from './routes.js';
+import { restoreScrollPosition, saveScrollPosition } from './scrollPosition.js';
 
 
 async function resultsForAllLanguages(page: number, pages: number): Promise<void> {
@@ -30,7 +31,7 @@ async function resultsForLanguage(language: Language, page: number): Promise<voi
 }
 
 async function routeResults(metadata: MetadataReponse): Promise<void> {
-    routeFromHash(metadata, {
+    await routeFromHash(metadata, {
         async resultsAllLanguages(page: number) {
             await resultsForAllLanguages(page, metadata.AllReposPages)
         },
@@ -41,7 +42,7 @@ async function routeResults(metadata: MetadataReponse): Promise<void> {
 }
 
 async function run(): Promise<void> {
-    displayStatisticsLoadingSpinner();
+    displayStatisticsLoadingSpinner()
     let metadata = await getMetadata()
     displayStatistics(metadata)
 
@@ -58,6 +59,11 @@ async function run(): Promise<void> {
         routeResults(metadata).catch(displayResultsError)
     })
     await routeResults(metadata)
+
+    restoreScrollPosition()
+    // save further scroll changes - but only start doing this after the previous
+    // scroll position has been restored
+    document.addEventListener('scrollend', saveScrollPosition)
 }
 
-run().catch(displayResultsError);
+run().catch(displayResultsError)

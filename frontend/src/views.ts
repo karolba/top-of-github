@@ -43,5 +43,6 @@ export function displayResultsLoadingSpinner(): void {
 }
 
 export function displayResultsError(error: any): void {
+    console.error(error)
     document.getElementById('results-container')!.replaceChildren(ResultsError(error));
 }

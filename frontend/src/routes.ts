@@ -1,4 +1,5 @@
 import { MetadataReponse, Language } from './apitypes.js';
+import { saveScrollPosition } from './scrollPosition.js';
 
 function startsWithNumber(str: string): Boolean {
     return !!/^[0-9]/.test(str)
@@ -32,9 +33,11 @@ export async function routeFromHash(metadata: MetadataReponse, routes: Routes): 
 }
 
 export function goToAllLanguagesResults(page: number) {
+    saveScrollPosition()
     window.location.hash = `${page}`
 }
 
 export function goToOneLanguagesResults(language: Language, page: number) {
+    saveScrollPosition()
     window.location.hash = `${language.EscapedName}/${page}`
 }
