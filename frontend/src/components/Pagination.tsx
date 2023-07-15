@@ -37,7 +37,6 @@ export default function Pagination(page: number, pages: number, onPageChange: (n
         .filter(pageNumber => pageNumber == 1 || pageNumber == pages || Math.abs(pageNumber - page) <= showNPagesAroundCurrent)
 
     const displayPagesWithEllipsis = insertEllipsis(displayPages)
-    console.log(displayPagesWithEllipsis)
 
     return (
         <nav aria-label="Results navigation" className="pt-3 pb-1">
