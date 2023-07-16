@@ -1,4 +1,5 @@
 import { h } from "dom-chef";
+import { saveScrollPosition } from "../scrollPosition";
 
 // generates a list of successive positive integers of length n
 // range(n) == [0, 1, 2, ..., n-1]
@@ -42,7 +43,9 @@ export default function Pagination(page: number, pages: number, onPageChange: (n
         <nav aria-label="Results navigation" className="pt-3 pb-1">
             <ul className="pagination flex-wrap justify-content-center">
                 <li className={`page-item ${page == 1 ? 'disabled' : ''}`}>
-                    <a className="page-link" href="#" onClick={(ev)=>{ ev.preventDefault(); onPageChange(1) }}>Previous</a>
+                    <a className="page-link" href="#" onClick={ev => { ev.preventDefault(); saveScrollPosition(); onPageChange(1) }}>
+                        Previous
+                    </a>
                 </li>
                 {displayPagesWithEllipsis
                     .map(pageNumber =>
@@ -58,12 +61,16 @@ export default function Pagination(page: number, pages: number, onPageChange: (n
                             </li>
                         :
                             <li className="page-item">
-                                <a className="page-link" href="#" onClick={(ev)=>{ ev.preventDefault(); onPageChange(Number(pageNumber)) }}>{pageNumber}</a>
+                                <a className="page-link" href="#" onClick={ev => { ev.preventDefault(); saveScrollPosition(); onPageChange(Number(pageNumber)) }}>
+                                    {pageNumber}
+                                </a>
                             </li>
                     )
                 }
                 <li className={`page-item ${page >= pages ? 'disabled' : ''}`}>
-                    <a className="page-link" href="#" onClick={(ev)=>{ ev.preventDefault(); onPageChange(pages) }}>Next</a>
+                    <a className="page-link" href="#" onClick={ev => { ev.preventDefault(); saveScrollPosition(); onPageChange(pages) }}>
+                        Next
+                    </a>
                 </li>
             </ul>
         </nav>
