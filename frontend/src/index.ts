@@ -55,8 +55,9 @@ async function run(): Promise<void> {
         }
     })
 
-    window.addEventListener('hashchange', () => {
-        routeResults(metadata).catch(displayResultsError)
+    window.addEventListener('hashchange', async () => {
+        await routeResults(metadata).catch(displayResultsError)
+        restoreScrollPosition()
     })
     await routeResults(metadata)
 
