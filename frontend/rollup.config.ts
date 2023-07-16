@@ -5,6 +5,7 @@ import serve from 'rollup-plugin-serve';
 import html from '@rollup/plugin-html';
 import del from 'rollup-plugin-delete';
 import copy from 'rollup-plugin-copy';
+import watch from 'rollup-plugin-watch';
 import { InputPluginOption, RollupOptions } from 'rollup';
 import { readFileSync } from 'fs';
 
@@ -62,6 +63,9 @@ const configurations: Record<string, () => Promise<RollupOptions>> = {
                 exclude: 'dist',
             },
             plugins: [
+                watch({
+                    dir: 'src',
+                }),
                 typescript(),
                 ...commonPlugins,
                 serve({

@@ -19,6 +19,7 @@
     "rollup-plugin-delete": "2.0.0",
     "rollup-plugin-livereload": "2.0.5",
     "rollup-plugin-serve": "2.0.2",
+    "rollup-plugin-watch": "1.0.2",
     "tslib": "2.5.3",
     "typescript": "5.1.3"
   }
