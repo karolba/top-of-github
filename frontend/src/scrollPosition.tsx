@@ -23,13 +23,11 @@ export function saveScrollPosition() {
 export function restoreScrollPosition() {
     if(window.history?.state && 'position' in window.history?.state) {
         const state: ScrollState = window.history.state
-        setTimeout(() => {
-            window.scrollTo({
-                behavior: "instant",
-                left: state.position.x,
-                top: state.position.y
-            })
-        }, 0);
+        window.scrollTo({
+            behavior: "instant",
+            left: state.position.x,
+            top: state.position.y
+        })
     }
 }
 
