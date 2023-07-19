@@ -19,3 +19,21 @@ export async function allLanguagesToplistPage(pageNumber: number): Promise<Topli
     let response = await fetch(`${BASE_API_URI}/all/${pageNumber}`);
     return await response.json();
 }
+
+function preloadJsonLink(link: string) {
+    const preload = document.createElement("link");
+    preload.href = link;
+    preload.rel = 'preload';
+    preload.as = 'fetch';
+    preload.crossOrigin = 'true';
+    preload.type = 'application/json';
+    document.head.appendChild(preload);
+}
+
+export async function preloadLanguageToplistPage(escapedLanguageName: string, pageNumber: number) {
+    preloadJsonLink(`${BASE_API_URI}/language/${escapedLanguageName}/${pageNumber}`)
+}
+
+export async function preloadAllLanguagesToplistPage(pageNumber: number) {
+    preloadJsonLink(`${BASE_API_URI}/all/${pageNumber}`)
+}

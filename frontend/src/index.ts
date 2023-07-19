@@ -1,7 +1,7 @@
-import { allLanguagesToplistPage, getMetadata, languageToplistPage } from './api.js';
+import { allLanguagesToplistPage, getMetadata, languageToplistPage, preloadAllLanguagesToplistPage, preloadLanguageToplistPage } from './api.js';
 import { Language, MetadataReponse } from './apitypes.js';
 import { displayResultsLoadingSpinner, displayResults, displayResultsError, displayStatisticsLoadingSpinner, displayStatistics, displaySearcher } from './views.js';
-import { goToAllLanguagesResults, goToOneLanguagesResults, routeFromHash } from './routes.js';
+import { goToAllLanguagesResults, goToOneLanguagesResults, routePreloadFromHash, routeFromHash } from './routes.js';
 import { restoreScrollPosition, saveScrollPosition } from './scrollPosition.js';
 
 
@@ -41,18 +41,28 @@ async function routeResults(metadata: MetadataReponse): Promise<void> {
     })
 }
 
+function preloadApiResponse() {
+    // Route without checking for correct language names and page counts, to have the results
+    // be in flight before the "metadata" file appears
+    routePreloadFromHash({
+        async resultsAllLanguages(page: number) {
+            preloadAllLanguagesToplistPage(page)
+        },
+        async resultsOneLanguage(language: Language, page: number) {
+            preloadLanguageToplistPage(language.EscapedName, page)
+        },
+    })
+}
+
 async function run(): Promise<void> {
+    preloadApiResponse()
     displayStatisticsLoadingSpinner()
     let metadata = await getMetadata()
     displayStatistics(metadata)
 
     await routeFromHash(metadata, {
-        async resultsAllLanguages(_page: number) {
-            displaySearcher(metadata, null)
-        },
-        async resultsOneLanguage(language: Language, _page: number) {
-            displaySearcher(metadata, language)
-        }
+        resultsAllLanguages: async () => displaySearcher(metadata, null),
+        resultsOneLanguage: async language => displaySearcher(metadata, language),
     })
 
     window.addEventListener('hashchange', async () => {

@@ -32,6 +32,33 @@ export async function routeFromHash(metadata: MetadataReponse, routes: Routes): 
     }
 }
 
+export async function routePreloadFromHash(routes: Routes): Promise<void> {
+    let hash = window.location.hash.replace(/^#/, '');
+
+    if (startsWithNumber(hash)) {
+        await routes.resultsAllLanguages(parseInt(hash, 10))
+    } else {
+        let [escapedLanguageName, page] = hash.split('/');
+
+        // Only the escaped name is populated, as that's all that's needed for preloading
+        let language: Language = {
+            CountOfRepos: NaN,
+            CountOfStars: NaN,
+            EscapedName: escapedLanguageName,
+            Name: '',
+            Pages: NaN
+        }
+
+        if (escapedLanguageName && page) {
+            await routes.resultsOneLanguage(language, parseInt(page, 10))
+        } else if (escapedLanguageName) {
+            await routes.resultsOneLanguage(language, 1)
+        } else {
+            await routes.resultsAllLanguages(1)
+        }
+    }
+}
+
 export function goToAllLanguagesResults(page: number) {
     saveScrollPosition()
     window.location.hash = `${page}`
