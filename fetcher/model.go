@@ -29,6 +29,8 @@ type Repo struct {
 
 	LastFetchedFromGithubAt  time.Time `json:"-"`
 	FirstFetchedFromGithubAt time.Time `json:"-"`
+
+	NotSeenSinceCounter int64 `json:"-"`
 }
 
 type State struct {

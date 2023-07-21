@@ -57,6 +57,18 @@ func programmingLanguages() []string {
 	return languages
 }
 
+func createView() {
+	_, err := db.Exec(`
+		begin transaction;
+		drop view if exists ActiveRepo;
+		create view ActiveRepo as select * from Repo where NotSeenSinceCounter < 15;
+		end;
+	`)
+	if err != nil {
+		log.Fatalln("Could not create the ActiveRepo view")
+	}
+}
+
 func createIndices() {
 	log.Print("Creating index on Repo(Language, Stargazers, Id)... ")
 	_, err := db.Exec(`
@@ -115,6 +127,7 @@ func main() {
 	}
 	defer closeOrPanic(db)
 
+	createView()
 	createIndices()
 	defer dropIndices()
 
@@ -184,7 +197,7 @@ func emojify(records []Record) []Record {
 func retrieveAndSaveAll(columnNames []string, pageSize int, offset int, page int) (shouldContinue bool) {
 	// Retrieve data from the database with pagination
 	rows, err := db.Query(`
-		SELECT * FROM Repo
+		SELECT * FROM ActiveRepo
 		ORDER BY Stargazers DESC, Id
 		LIMIT $1 OFFSET $2
 	`, pageSize, offset)
@@ -209,7 +222,7 @@ func retrieveAndSaveAll(columnNames []string, pageSize int, offset int, page int
 func retrieveAndSaveByLanguage(columnNames []string, pageSize int, offset int, page int, language string) (shouldContinue bool) {
 	// Retrieve data from the database with pagination
 	rows, err := db.Query(`
-		SELECT * FROM Repo
+		SELECT * FROM ActiveRepo
 		WHERE Language=$1
 		ORDER BY Stargazers DESC, Id
 		LIMIT $2 OFFSET $3

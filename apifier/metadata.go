@@ -45,7 +45,7 @@ func saveMetadata() {
 	// Query for count of repos and stars per language
 	rows, err := db.Query(`
 		SELECT Language, SUM(Stargazers), COUNT(*)
-		FROM Repo
+		FROM ActiveRepo
 		GROUP BY Language
 		ORDER BY COUNT(*) DESC, Name
 	`)

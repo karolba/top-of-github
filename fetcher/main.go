@@ -11,9 +11,14 @@ import (
 	"xorm.io/xorm"
 )
 
+func increaseNotSeenSinceCounter(db *xorm.Engine) {
+	db.Exec("update Repo set NotSeenSinceCounter = NotSeenSinceCounter + 1")
+}
+
 func endWork(ctx context.Context, db *xorm.Engine) {
 	SetMaxStars(db, MAX_STARS_DEFAULT)
 	SetSearchWindow(db, SEARCH_WINDOW_DEFAULT)
+	increaseNotSeenSinceCounter(db)
 	os.Exit(0)
 }
 
