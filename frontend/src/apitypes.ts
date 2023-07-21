@@ -33,7 +33,7 @@ export interface Repository {
     OwnerGravatarId: string
     OwnerLogin: string
     OwnerType: string
-    RepoPushedAt: string
+    RepoPushedAt: null | string
     RepoUpdatedAt: string
     Stargazers: number
     Topics: string
