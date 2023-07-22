@@ -17,23 +17,18 @@
 
 <body class="bg-body-tertiary">
     <div class="container">
-        <nav class="navbar navbar-expand-sm rounded my-3 p-3 bg-body rounded shadow-sm"
-            aria-label="Eleventh navbar example">
+        <nav class="navbar navbar-expand-sm rounded my-3 p-3 bg-body rounded shadow-sm">
             <div class="container-fluid">
-                <a class="navbar-brand">Top GitHub repos by stars</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarsExample09" aria-controls="navbarsExample09" aria-expanded="false"
-                    aria-label="Toggle navigation">
+                <a class="navbar-brand" href="#">Top GitHub repos by stars</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-
-                <div class="collapse navbar-collapse" id="navbarsExample09">
-                    <ul class="navbar-nav me-auto mb-2 mb-sm-0"
-                        style="position: absolute; right: 0; padding-right: 1.5rem">
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                    <ul class="navbar-nav">
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="#">Explore</a>
                         </li>
-
                         <li class="nav-item">
                             <a class="nav-link" href="https://github.com/karolba/top-of-github">Source code</a>
                         </li>
@@ -56,16 +51,6 @@
     <script src="/external-libraries/js/jquery-3.7.0.slim.min.js"></script>
     <script src="/external-libraries/js/bootstrap-select-1.14.0-beta3.min.js"></script>
     ${scripts}
-    <script>
-	// TODO: fix this, the navbar is somehow broken on small devices
-	//(() => {
-	//	'use strict'
-
-	//	document.querySelector('#navbarSideCollapse').addEventListener('click', () => {
-	//		document.querySelector('.offcanvas-collapse').classList.toggle('open')
-	//	})
-	//})()
-    </script>
 </body>
 
 </html>
