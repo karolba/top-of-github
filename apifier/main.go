@@ -70,18 +70,20 @@ func createView() {
 }
 
 func createIndices() {
-	log.Print("Creating index on Repo(Language, Stargazers, Id)... ")
+	log.Print("Creating index on Repo(Language, Stargazers, Id, NotSeenSinceCounter)... ")
 	_, err := db.Exec(`
-		create index if not exists LanguageStargazersId on Repo(Language, Stargazers DESC, Id);
+		drop index if exists LanguageStargazersId;
+		create index if not exists LanguageStargazersId on Repo(Language, Stargazers DESC, Id, NotSeenSinceCounter);
 	`)
 	if err != nil {
 		log.Fatalln("\nCould not create index LanguageStargazers", err)
 	}
 	log.Println("done")
 
-	log.Print("Creating index on Repo(Stargazers, Id)... ")
+	log.Print("Creating index on Repo(Stargazers, Id, NotSeenSinceCounter)... ")
 	_, err = db.Exec(`
-		create index if not exists StargazersId on Repo(Stargazers DESC, Id);
+		drop index if exists StargazersId;
+		create index if not exists StargazersId on Repo(Stargazers DESC, Id, NotSeenSinceCounter);
 	`)
 	if err != nil {
 		log.Fatalln("\nCould not create index Stargazers", err)
