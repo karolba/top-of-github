@@ -97,7 +97,10 @@ export function setupThemeHandling() {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
         const storedTheme = getStoredTheme()
         if (storedTheme !== Theme.Light && storedTheme !== Theme.Dark) {
-            setTheme(getPreferredTheme())
+            const theme = getPreferredTheme()
+            setTheme(theme)
+            showActiveTheme(theme)
+            setBootstrapSelectTheme(theme)
         }
     })
 
