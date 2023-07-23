@@ -1,4 +1,5 @@
 import { Language, MetadataReponse, ToplistPageResponse } from './apitypes.js';
+import { getPreferredTheme, setBootstrapSelectTheme } from './colorModes.js';
 import LoadingSpinner from './components/LoadingSpinner.js';
 import Results from './components/Results.js';
 import ResultsError from './components/ResultsError.js';
@@ -32,6 +33,8 @@ export function displaySearcher(metadata: MetadataReponse, language: Language | 
             goToOneLanguagesResults(selected, 1);
         }
     });
+
+    setBootstrapSelectTheme(getPreferredTheme())
 }
 
 export function displayResults(repositories: ToplistPageResponse, page: number, pages: number, onPageChange: (page: number) => void): void {

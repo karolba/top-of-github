@@ -3,6 +3,7 @@ import { Language, MetadataReponse } from './apitypes.js';
 import { displayResultsLoadingSpinner, displayResults, displayResultsError, displayStatisticsLoadingSpinner, displayStatistics, displaySearcher } from './views.js';
 import { goToAllLanguagesResults, goToOneLanguagesResults, routePreloadFromHash, routeFromHash } from './routes.js';
 import { restoreScrollPosition, saveScrollPosition } from './scrollPosition.js';
+import { setupThemeHandling } from './colorModes.js';
 
 
 async function resultsForAllLanguages(page: number, pages: number): Promise<void> {
@@ -55,6 +56,7 @@ function preloadApiResponse() {
 }
 
 async function run(): Promise<void> {
+    setupThemeHandling()
     preloadApiResponse()
     displayStatisticsLoadingSpinner()
     let metadata = await getMetadata()
