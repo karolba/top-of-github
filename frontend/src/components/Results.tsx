@@ -71,7 +71,7 @@ function Repo(repo: Repository): JSX.Element {
     return (
         <li className="list-group-item d-md-flex justify-content-between align-items-start">
             <div className="d-flex flex-column align-items-center">
-                <b>{repo.Stargazers}</b>
+                <b>{repo.Stargazers.toLocaleString('en')}</b>
                 <small className="text-secondary">stargazers</small>
             </div>
             <div className="d-flex flex-column align-items-center ms-md-2">
