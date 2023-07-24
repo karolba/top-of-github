@@ -57,11 +57,30 @@ func programmingLanguages() []string {
 	return languages
 }
 
-func createView() {
+// createView creates a view of repos with fields actually used on the frontend.
+// additionally, the repos have to have been found at least 15 search cycles back
+// - this prevents displaying deleted repositories.
+func createActiveRepoView() {
 	_, err := db.Exec(`
 		begin transaction;
 		drop view if exists ActiveRepo;
-		create view ActiveRepo as select * from Repo where NotSeenSinceCounter < 15;
+		create view ActiveRepo as
+		    select
+		        Archived,
+		        CreatedAt,
+		        Description,
+		        GithubLink,
+		        Homepage,
+		        Language,
+		        LicenseSpdxId,
+		        Name,
+		        OwnerAvatarUrl,
+		        OwnerLogin,
+		        RepoPushedAt,
+		        RepoUpdatedAt,
+		        Stargazers
+		     from Repo
+		     where NotSeenSinceCounter < 15;
 		end;
 	`)
 	if err != nil {
@@ -127,7 +146,7 @@ func main() {
 	}
 	defer closeOrPanic(db)
 
-	createView()
+	createActiveRepoView()
 	createIndices()
 	defer dropIndices()
 
