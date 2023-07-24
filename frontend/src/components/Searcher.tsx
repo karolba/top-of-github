@@ -1,6 +1,6 @@
 import { h } from "dom-chef"
 import { MetadataReponse, Language } from "../apitypes"
-
+import { humanizeNumber } from "../humanizeNumber"
 
 export default function Searcher(metadata: MetadataReponse, selectedLanguage: Language|null): JSX.Element {
     let languages = [
@@ -20,7 +20,7 @@ export default function Searcher(metadata: MetadataReponse, selectedLanguage: La
                     <select id="searcher" className="selectpicker" data-live-search="true" data-width="100%">
                         {languages.map(language =>
                             <option
-                                data-subtext={` ${language.CountOfRepos} ${language.CountOfRepos == 1 ? 'repo' : 'repos'}`}
+                                data-subtext={` ${humanizeNumber(language.CountOfRepos)} ${language.CountOfRepos == 1 ? 'repo' : 'repos'}`}
                                 selected={language == selectedLanguage}>
 
                                 {language.Name ? language.Name : '(no language)'}
