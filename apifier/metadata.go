@@ -30,14 +30,14 @@ func numberOfPages(items int64) int64 {
 func saveMetadata() {
 	// Query for count of all repos
 	var countOfAllRepos int64
-	err := db.QueryRow("SELECT COUNT(*) FROM Repo").Scan(&countOfAllRepos)
+	err := db.QueryRow("SELECT COUNT(*) FROM ActiveRepo").Scan(&countOfAllRepos)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Query for count of all stars
 	var countOfAllStars int64
-	err = db.QueryRow("SELECT SUM(Stargazers) FROM Repo").Scan(&countOfAllStars)
+	err = db.QueryRow("SELECT SUM(Stargazers) FROM ActiveRepo").Scan(&countOfAllStars)
 	if err != nil {
 		log.Fatal(err)
 	}

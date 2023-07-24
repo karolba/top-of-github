@@ -33,6 +33,8 @@ func closeOrPanic(toClose closable) {
 
 func programmingLanguages() []string {
 	// Query to retrieve unique languages
+	// This query is done on "Repo" instead of "ActiveRepo" to be sure to override the result json file for every
+	// programming language we've ever came across.
 	query := "SELECT DISTINCT Language FROM Repo"
 
 	// Execute the query
