@@ -68,6 +68,7 @@ func createActiveRepoView() {
 		drop view if exists ActiveRepo;
 		create view ActiveRepo as
 		    select
+		        Id,
 		        Archived,
 		        CreatedAt,
 		        Description,
