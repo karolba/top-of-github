@@ -140,6 +140,7 @@ func retryUpload(client *s3.Client, path string, file *os.File) error {
 			ContentType:        aws.String(*contentType),
 			ContentEncoding:    aws.String(*contentEncoding),
 			ContentDisposition: aws.String("inline"),
+			CacheControl:       aws.String(*cacheControl),
 		})
 		if err == nil {
 			return nil

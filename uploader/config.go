@@ -17,6 +17,7 @@ var (
 	bucketName      = flag.String("bucket-name", "", "Target bucket name")
 	contentType     = flag.String("content-type", "application/json", "Content-Type for uploaded files")
 	contentEncoding = flag.String("content-encoding", "gzip", "Content-Type for uploaded files")
+	cacheControl    = flag.String("cache-control", "public, max-age=86400, stale-if-error=86400, stale-while-revalidate=86400", "The Cache-Control header for uploaded files")
 )
 
 func init() {
