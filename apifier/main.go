@@ -154,7 +154,7 @@ func main() {
 	defer dropIndices()
 
 	// Retrieve column names from the table
-	columnNames, err := getColumnNames(db, "Repo")
+	columnNames, err := getColumnNames(db, "ActiveRepo")
 	if err != nil {
 		log.Fatalln(err)
 	}
