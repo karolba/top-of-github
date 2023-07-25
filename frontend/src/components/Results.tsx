@@ -81,7 +81,7 @@ function Repo(repo: Repository): JSX.Element {
                     src={addQueryParam(new URL(repo.OwnerAvatarUrl), 's', `${AVATAR_SIZE_PX * 2}`).toString()}
                 ></img>
             </div>
-            <div className="ms-md-2 w-100">
+            <div className="ms-md-2 w-100 text-break">
                 <div className="d-md-flex">
                     <div className="me-auto" style={{overflowWrap: "anywhere"}}>
                         <ScrollPositionSavingLink href={githubAccountLink(repo.OwnerLogin)}>{repo.OwnerLogin}</ScrollPositionSavingLink>
