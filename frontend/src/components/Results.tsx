@@ -32,9 +32,13 @@ function CreatedAtBadge(createdAtDaysAgo: number): JSX.Element {
         return <span className="badge bg-secondary rounded-pill m-1">
             {Math.round(createdAtYearsAgo * 10) / 10} years old
         </span>
-    } else {
+    } else if(createdAtDaysAgo > 31) {
         return <span className="badge bg-success rounded-pill m-1">
             {Math.round(createdAtYearsAgo * 12)} months old
+        </span>
+    } else {
+        return <span className="badge bg-success rounded-pill m-1">
+            {Math.round(createdAtDaysAgo)} days old
         </span>
     }
 
