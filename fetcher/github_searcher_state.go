@@ -11,12 +11,15 @@ import (
 )
 
 const (
-	MAX_STARS_KEY         = "max_stars"
-	MAX_STARS_DEFAULT     = 50000
-	SEARCH_WINDOW_KEY     = "search_window"
-	SEARCH_WINDOW_DEFAULT = 1000
-	DATE_START_DAY_KEY    = "day_start"
-	DATE_DAYS_WINDOW_KEY  = "days_window"
+	MAX_STARS_KEY               = "max_stars"
+	MAX_STARS_DEFAULT           = 50000
+	SEARCH_WINDOW_KEY           = "search_window"
+	SEARCH_WINDOW_DEFAULT       = 1000
+	DATE_START_DAY_KEY          = "day_start"
+	DATE_DAYS_WINDOW_KEY        = "days_window"
+	GETREPO_RATELIMIT_RESET     = "getrepo_ratelimit_reset"
+	GETREPO_RATELIMIT_REMAINING = "getrepo_ratelimit_remaining"
+	DEFAULT_GETREPO_LIMIT       = 6000
 )
 
 func getFromState[T any](db xorm.Interface, key string, defaultValue T) T {
@@ -51,6 +54,17 @@ func GetSearchWindow(db xorm.Interface) int64 {
 }
 func SetSearchWindow(db xorm.Interface, win int64) {
 	setToState[int64](db, SEARCH_WINDOW_KEY, win)
+}
+
+func SetRepoRatelimit(db xorm.Interface, ratelimitReset time.Time, ratelimitRemaining int) {
+	setToState[int64](db, GETREPO_RATELIMIT_RESET, ratelimitReset.Unix())
+	setToState[int](db, GETREPO_RATELIMIT_REMAINING, ratelimitRemaining)
+}
+func GetRepoRatelimit(db xorm.Interface) (ratelimitReset time.Time, ratelimitRemaining int) {
+	defaultReset := time.Now().Add(1 * time.Hour).Unix()
+	ratelimitReset = time.Unix(getFromState[int64](db, GETREPO_RATELIMIT_RESET, defaultReset), 0)
+	ratelimitRemaining = getFromState[int](db, GETREPO_RATELIMIT_REMAINING, DEFAULT_GETREPO_LIMIT)
+	return
 }
 
 type RepoCreationDateRange struct {

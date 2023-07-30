@@ -41,5 +41,9 @@ func initialiseDb() *xorm.Engine {
 		new(State),
 	))
 
+	lo.Must(engine.Exec(`
+		create unique index if not exists RepoNotSeenSinceCounter on Repo(NotSeenSinceCounter desc, Id asc);
+	`))
+
 	return engine
 }
