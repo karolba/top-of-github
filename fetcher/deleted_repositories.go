@@ -28,7 +28,7 @@ func surelyDoesntExist(response *http.Response) bool {
 		response.StatusCode == http.StatusUnavailableForLegalReasons // "This repository is currently disabled due to a DMCA takedown notice."
 }
 
-func getRepo(githubClient *http.Client, fullName string) GithubSearchResponse {
+func getRepo(githubClient *http.Client, id int64, fullName string) GithubSearchResponse {
 	result := GithubSearchResponse{
 		IncompleteResults: true,
 	}
@@ -80,6 +80,10 @@ func getRepo(githubClient *http.Client, fullName string) GithubSearchResponse {
 		log.Println(fmt.Errorf("[deleter] getRepo: Could not decode repo json from GitHub: %w", err))
 		return result
 	}
+	// Note: the ID returned by the GitHub /repo endpoint is different from the one returned from the
+	// /search endpoint. Let's override the ID to the search one here to be sure to never use the wrong
+	// one anywhere
+	repo.Id = id
 
 	if surelyDoesntExist(response) {
 		result.TotalCount = 0
@@ -135,7 +139,7 @@ func checkReposForDeletion(db *xorm.Engine, ctx context.Context) {
 	log.Printf("[deleter] Checking %d likely-deleted repositories (asked the database for max %d)\n", len(likelyDeleted), parallelFetches)
 
 	responses := parallel.Map(likelyDeleted, func(repo Repo, index int) GithubSearchResponse {
-		return getRepo(newGithubApiClient(ctx), repo.FullName)
+		return getRepo(newGithubApiClient(ctx), repo.Id, repo.FullName)
 	})
 
 	deletedCount, updatedCount := 0, 0

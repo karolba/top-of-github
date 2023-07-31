@@ -302,6 +302,13 @@ func save(db *xorm.Engine, resp GithubSearchResponse) {
 				repo.FirstFetchedFromGithubAt = time.Now()
 				lo.Must(tx.Insert(repo))
 			}
+
+			// Get rid of repositories with a different ID than just inserted, but with the same FullName
+			// This happens when a repository is deleted, but a new one with the same name is created in its place
+			affected := lo.Must(tx.Where("Id != ? and FullName = ?", repo.Id, repo.FullName).Unscoped().Delete(&Repo{}))
+			if affected > 0 {
+				log.Printf("[save] Deleted %d duplicate entries for repo %s", affected, repo.FullName)
+			}
 		}
 		return nil, nil
 	}))
