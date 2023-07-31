@@ -26,6 +26,7 @@ type GithubSearchResponse struct {
 	IncompleteResults  bool      `json:"incomplete_results"`
 	RatelimitRemaining int       `json:"-"`
 	RatelimitReset     time.Time `json:"-"`
+	Page               int       `json:"-"`
 }
 
 // The builtin time.Sleep function doesn't take context.Context into account
@@ -99,6 +100,7 @@ func search(githubClient *http.Client, minStars, maxStars int64, page int, searc
 
 	decodedResponse := GithubSearchResponse{}
 	lo.Must0(json.Unmarshal(body, &decodedResponse), "Could not decode response json")
+	decodedResponse.Page = page
 	decodedResponse.RatelimitRemaining = lo.Must(strconv.Atoi(response.Header.Get("X-Ratelimit-Remaining")))
 	decodedResponse.RatelimitReset = time.Unix(lo.Must(strconv.ParseInt(response.Header.Get("X-Ratelimit-Reset"), 10, 64)), 0)
 
@@ -107,6 +109,17 @@ func search(githubClient *http.Client, minStars, maxStars int64, page int, searc
 
 func searchWithCreationDate(ghClient *http.Client, minStars, maxStars int64, creation RepoCreationDateRange, page int) GithubSearchResponse {
 	return search(ghClient, minStars, maxStars, page, "created:"+creation.ToQueryString())
+}
+
+func searchWithCreationDateToChannel(ctx context.Context, maybeResponse chan<- mo.Result[GithubSearchResponse], minStars int64, maxStars int64, creationDateRange RepoCreationDateRange, page int) {
+	err, ok := lo.TryWithErrorValue(func() error {
+		maybeResponse <- mo.Ok(searchWithCreationDate(newGithubApiClient(ctx), minStars, maxStars, creationDateRange, page))
+		log.Printf("[async] Got response for page %v\n", page)
+		return nil
+	})
+	if !ok {
+		maybeResponse <- mo.Err[GithubSearchResponse](errors.Errorf("Could not fetch async search: %v", err))
+	}
 }
 
 func smallerWindow(window int64) int64 {
@@ -245,41 +258,39 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 		creationDateRange.BiggerRange().Save(db)
 	}
 
+	// we already have the first page (have to get it first synchronously to get the number of pages), so start from the second one
 	startAtPage := 2
-	// If we have the Ratelimit resources to do so - search everything but the first and last page in parallel
-	if pages >= 4 && firstPage.RatelimitRemaining > pages-1 {
-		maybeResponses := make(chan mo.Result[GithubSearchResponse], MAX_PAGES)
-		for i := startAtPage; i <= pages-1; i++ {
-			go func(i int) {
-				err, ok := lo.TryWithErrorValue(func() error {
-					maybeResponses <- mo.Ok(searchWithCreationDate(newGithubApiClient(ctx), minStars, maxStars, creationDateRange, i))
-					log.Printf("[async] Got response for page %v\n", i)
-					return nil
-				})
-				if !ok {
-					maybeResponses <- mo.Err[GithubSearchResponse](errors.Errorf("Could not fetch async search: %v", err))
-				}
-			}(i)
-		}
 
-		for i := startAtPage; i <= pages-1; i++ {
-			maybeResponse, ok := <-maybeResponses
-			lo.Must0(ok, "[async] Did not receive enough maybeResponses")
-			response := maybeResponse.MustGet()
-			lo.Must0(response.WaitIfNeccessary(ctx))
-			save(db, response)
-			decreaseMaxStarsToMinumum(db, response)
-		}
+	maybeResponses := make(chan mo.Result[GithubSearchResponse], pages-1)
 
-		startAtPage = pages // the last page
+	// If we don't have enough Ratelimit - let's first do what we can asynchronously, waiting when needed
+	if firstPage.RatelimitRemaining <= pages-1 {
+		firstBatchSize := min(firstPage.RatelimitRemaining, pages-1)
+		maybeResponsesBeforeRatelimit := make(chan mo.Result[GithubSearchResponse], firstBatchSize)
+		for i := 0; i < firstBatchSize; i++ {
+			go searchWithCreationDateToChannel(ctx, maybeResponsesBeforeRatelimit, minStars, maxStars, creationDateRange, startAtPage+i)
+		}
+		for i := 0; i < firstBatchSize; i++ {
+			maybeResponse, ok := <-maybeResponsesBeforeRatelimit
+			lo.Must0(ok, "[async] Did not receive enough objects in the maybeResponsesBeforeRatelimit channel")
+			maybeResponse.ForEach(func(resp GithubSearchResponse) { lo.Must0(resp.WaitIfNeccessary(ctx)) })
+			maybeResponses <- maybeResponse
+		}
+		startAtPage += firstBatchSize
 	}
 
-	// And now either fetch the last page or (if low on Ratelimit) fetch pages synchronously to properly wait
-	for page := startAtPage; page <= pages; page += 1 {
-		res := searchWithCreationDate(client, minStars, maxStars, creationDateRange, page)
-		lo.Must0(res.WaitIfNeccessary(ctx))
+	// And now either fetch or the pages or (if we were low on Ratelimit) fetch the pages left
+	for i := startAtPage; i <= pages; i++ {
+		go searchWithCreationDateToChannel(ctx, maybeResponses, minStars, maxStars, creationDateRange, i)
+	}
+
+	for i := startAtPage; i <= pages; i += 1 {
+		maybeResponse, ok := <-maybeResponses
+		lo.Must0(ok, "[async] Did not receive enough maybeResponses")
+		res := maybeResponse.MustGet()
+		log.Printf("[async] Processing response for page %d\n", res.Page)
 		save(db, res)
-		if !res.IncompleteResults && page == pages {
+		if !res.IncompleteResults && res.Page == pages {
 			if creationDateRange.CoversToday() {
 				// this is the last page - we are sure nothing was missed, can decrease to one beyond minimum
 				decreaseMaxStarsBeyondMinimum(db, res)
@@ -319,10 +330,6 @@ func decreaseMaxStarsToMinumum(db *xorm.Engine, resp GithubSearchResponse) {
 		if len(resp.Items) > 0 {
 			leastStargazers := resp.Items[len(resp.Items)-1].Stargazers
 			maxStars := GetMaxStars(tx)
-			if leastStargazers > maxStars {
-				log.Printf("[!!!] [Warning] Trying to <increase> maxStars in decreaseMaxStars (from %v to %v)"+
-					" - GitHub's api might be a bit weird\n", maxStars, leastStargazers)
-			}
 			if leastStargazers < maxStars {
 				log.Printf("Decreasing max stars from %v to %v\n", GetMaxStars(db), leastStargazers)
 				SetMaxStars(tx, leastStargazers)
