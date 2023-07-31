@@ -259,7 +259,7 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 	}
 
 	// we already have the first page (have to get it first synchronously to get the number of pages), so start from the second one
-	startAtPage := 2
+	startFetchAtPage := 2
 
 	maybeResponses := make(chan mo.Result[GithubSearchResponse], pages-1)
 
@@ -268,7 +268,7 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 		firstBatchSize := min(firstPage.RatelimitRemaining, pages-1)
 		maybeResponsesBeforeRatelimit := make(chan mo.Result[GithubSearchResponse], firstBatchSize)
 		for i := 0; i < firstBatchSize; i++ {
-			go searchWithCreationDateToChannel(ctx, maybeResponsesBeforeRatelimit, minStars, maxStars, creationDateRange, startAtPage+i)
+			go searchWithCreationDateToChannel(ctx, maybeResponsesBeforeRatelimit, minStars, maxStars, creationDateRange, startFetchAtPage+i)
 		}
 		for i := 0; i < firstBatchSize; i++ {
 			maybeResponse, ok := <-maybeResponsesBeforeRatelimit
@@ -276,15 +276,15 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 			maybeResponse.ForEach(func(resp GithubSearchResponse) { lo.Must0(resp.WaitIfNeccessary(ctx)) })
 			maybeResponses <- maybeResponse
 		}
-		startAtPage += firstBatchSize
+		startFetchAtPage += firstBatchSize
 	}
 
 	// And now either fetch or the pages or (if we were low on Ratelimit) fetch the pages left
-	for i := startAtPage; i <= pages; i++ {
+	for i := startFetchAtPage; i <= pages; i++ {
 		go searchWithCreationDateToChannel(ctx, maybeResponses, minStars, maxStars, creationDateRange, i)
 	}
 
-	for i := startAtPage; i <= pages; i += 1 {
+	for i := 0; i < pages-1; i++ {
 		maybeResponse, ok := <-maybeResponses
 		lo.Must0(ok, "[async] Did not receive enough maybeResponses")
 		res := maybeResponse.MustGet()
