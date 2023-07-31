@@ -260,12 +260,13 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 
 	// we already have the first page (have to get it first synchronously to get the number of pages), so start from the second one
 	startFetchAtPage := 2
+	pagesLeftToProcess := pages - 1
 
-	maybeResponses := make(chan mo.Result[GithubSearchResponse], pages-1)
+	maybeResponses := make(chan mo.Result[GithubSearchResponse], pagesLeftToProcess)
 
 	// If we don't have enough Ratelimit - let's first do what we can asynchronously, waiting when needed
-	if firstPage.RatelimitRemaining <= pages-1 {
-		firstBatchSize := min(firstPage.RatelimitRemaining, pages-1)
+	if firstPage.RatelimitRemaining <= pagesLeftToProcess {
+		firstBatchSize := min(firstPage.RatelimitRemaining, pagesLeftToProcess)
 		maybeResponsesBeforeRatelimit := make(chan mo.Result[GithubSearchResponse], firstBatchSize)
 		for i := 0; i < firstBatchSize; i++ {
 			go searchWithCreationDateToChannel(ctx, maybeResponsesBeforeRatelimit, minStars, maxStars, creationDateRange, startFetchAtPage+i)
@@ -284,21 +285,27 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 		go searchWithCreationDateToChannel(ctx, maybeResponses, minStars, maxStars, creationDateRange, i)
 	}
 
-	for i := 0; i < pages-1; i++ {
+	responses := make([]GithubSearchResponse, pagesLeftToProcess)
+
+	for i := 0; i < pagesLeftToProcess; i++ {
 		maybeResponse, ok := <-maybeResponses
 		lo.Must0(ok, "[async] Did not receive enough maybeResponses")
-		res := maybeResponse.MustGet()
-		log.Printf("[async] Processing response for page %d\n", res.Page)
-		save(db, res)
-		if !res.IncompleteResults && res.Page == pages {
+		response := maybeResponse.MustGet()
+		log.Printf("[async] Processing response for page %d\n", response.Page)
+		save(db, response)
+		responses[response.Page-2] = response
+	}
+
+	for _, response := range responses {
+		if !response.IncompleteResults && response.Page == pages {
 			if creationDateRange.CoversToday() {
 				// this is the last page - we are sure nothing was missed, can decrease to one beyond minimum
-				decreaseMaxStarsBeyondMinimum(db, res)
+				decreaseMaxStarsBeyondMinimum(db, response)
 			} else {
 				creationDateRange.NextRange().Save(db)
 			}
 		} else {
-			decreaseMaxStarsToMinumum(db, res)
+			decreaseMaxStarsToMinumum(db, response)
 		}
 	}
 }
