@@ -29,6 +29,11 @@ type GithubSearchResponse struct {
 	Page               int       `json:"-"`
 }
 
+type GithubSearchResponseError struct {
+	Error error
+	Page  int
+}
+
 // The builtin time.Sleep function doesn't take context.Context into account
 func sleepContext(ctx context.Context, d time.Duration) error {
 	select {
@@ -111,14 +116,17 @@ func searchWithCreationDate(ghClient *http.Client, minStars, maxStars int64, cre
 	return search(ghClient, minStars, maxStars, page, "created:"+creation.ToQueryString())
 }
 
-func searchWithCreationDateToChannel(ctx context.Context, maybeResponse chan<- mo.Result[GithubSearchResponse], minStars int64, maxStars int64, creationDateRange RepoCreationDateRange, page int) {
+func searchWithCreationDateToChannel(ctx context.Context, maybeResponse chan<- mo.Either[GithubSearchResponse, GithubSearchResponseError], minStars int64, maxStars int64, creationDateRange RepoCreationDateRange, page int) {
 	err, ok := lo.TryWithErrorValue(func() error {
-		maybeResponse <- mo.Ok(searchWithCreationDate(newGithubApiClient(ctx), minStars, maxStars, creationDateRange, page))
+		maybeResponse <- mo.Left[GithubSearchResponse, GithubSearchResponseError](searchWithCreationDate(newGithubApiClient(ctx), minStars, maxStars, creationDateRange, page))
 		log.Printf("[async] Got response for page %v\n", page)
 		return nil
 	})
 	if !ok {
-		maybeResponse <- mo.Err[GithubSearchResponse](errors.Errorf("Could not fetch async search: %v", err))
+		maybeResponse <- mo.Right[GithubSearchResponse, GithubSearchResponseError](GithubSearchResponseError{
+			Error: errors.Errorf("Could not fetch async search: %v", err),
+			Page:  page,
+		})
 	}
 }
 
@@ -262,41 +270,51 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 	startFetchAtPage := 2
 	pagesLeftToProcess := pages - 1
 
-	maybeResponses := make(chan mo.Result[GithubSearchResponse], pagesLeftToProcess)
+	maybeResponses := make(chan mo.Either[GithubSearchResponse, GithubSearchResponseError], pagesLeftToProcess)
 
 	// If we don't have enough Ratelimit - let's first do what we can asynchronously, waiting when needed
 	if firstPage.RatelimitRemaining <= pagesLeftToProcess {
 		firstBatchSize := min(firstPage.RatelimitRemaining, pagesLeftToProcess)
-		maybeResponsesBeforeRatelimit := make(chan mo.Result[GithubSearchResponse], firstBatchSize)
+		maybeResponsesBeforeRatelimit := make(chan mo.Either[GithubSearchResponse, GithubSearchResponseError], firstBatchSize)
 		for i := 0; i < firstBatchSize; i++ {
 			go searchWithCreationDateToChannel(ctx, maybeResponsesBeforeRatelimit, minStars, maxStars, creationDateRange, startFetchAtPage+i)
 		}
 		for i := 0; i < firstBatchSize; i++ {
 			maybeResponse, ok := <-maybeResponsesBeforeRatelimit
 			lo.Must0(ok, "[async] Did not receive enough objects in the maybeResponsesBeforeRatelimit channel")
-			maybeResponse.ForEach(func(resp GithubSearchResponse) { lo.Must0(resp.WaitIfNeccessary(ctx)) })
+			maybeResponse.ForEach(
+				func(resp GithubSearchResponse) { lo.Must0(resp.WaitIfNeccessary(ctx)) },
+				func(_ GithubSearchResponseError) { log.Println("[async] passing the error up") })
 			maybeResponses <- maybeResponse
 		}
 		startFetchAtPage += firstBatchSize
 	}
 
-	// And now either fetch or the pages or (if we were low on Ratelimit) fetch the pages left
+	// And now either fetch all the pages or (if we were low on Ratelimit) fetch the pages left
 	for i := startFetchAtPage; i <= pages; i++ {
 		go searchWithCreationDateToChannel(ctx, maybeResponses, minStars, maxStars, creationDateRange, i)
 	}
 
-	responses := make([]GithubSearchResponse, pagesLeftToProcess)
+	savedMaybeResponses := make([]mo.Result[GithubSearchResponse], pagesLeftToProcess)
 
 	for i := 0; i < pagesLeftToProcess; i++ {
 		maybeResponse, ok := <-maybeResponses
 		lo.Must0(ok, "[async] Did not receive enough maybeResponses")
-		response := maybeResponse.MustGet()
-		log.Printf("[async] Processing response for page %d\n", response.Page)
-		save(db, response)
-		responses[response.Page-2] = response
+		maybeResponse.ForEach(
+			func(response GithubSearchResponse) {
+				log.Printf("[async] Processing response for page %d\n", response.Page)
+				save(db, response)
+				savedMaybeResponses[response.Page-2] = mo.Ok(response)
+			}, func(error GithubSearchResponseError) {
+				log.Printf("[async] Skipping saving for page %d because of an error\n", error.Page)
+				savedMaybeResponses[error.Page-2] = mo.Err[GithubSearchResponse](error.Error)
+			})
 	}
 
-	for _, response := range responses {
+	for _, savedMaybeResponse := range savedMaybeResponses {
+		// Only now crash on an error - after every result is saved and max stars and date ranges are decreased
+		// for all the previous ones
+		response := savedMaybeResponse.MustGet()
 		if !response.IncompleteResults && response.Page == pages {
 			if creationDateRange.CoversToday() {
 				// this is the last page - we are sure nothing was missed, can decrease to one beyond minimum
