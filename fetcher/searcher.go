@@ -16,7 +16,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
-	"github.com/samber/lo/parallel"
 	"github.com/samber/mo"
 	"xorm.io/xorm"
 )
@@ -249,23 +248,24 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 	startAtPage := 2
 	// If we have the Ratelimit resources to do so - search everything but the first and last page in parallel
 	if pages >= 4 && firstPage.RatelimitRemaining > pages-1 {
-		maybeResponses := parallel.Times(pages-2, func(index int) mo.Result[GithubSearchResponse] {
-			var response GithubSearchResponse
-			err, ok := lo.TryWithErrorValue(func() error {
-				response = searchWithCreationDate(newGithubApiClient(ctx), minStars, maxStars, creationDateRange, index+2)
-				log.Printf("[async] Got response for page %v\n", index+2)
-				return nil
-			})
-			if !ok {
-				return mo.Err[GithubSearchResponse](errors.Errorf("Could not fetch async search: %v", err))
-			} else {
-				return mo.Ok(response)
-			}
-		})
+		maybeResponses := make(chan mo.Result[GithubSearchResponse], MAX_PAGES)
+		for i := startAtPage; i <= pages-1; i++ {
+			go func(i int) {
+				err, ok := lo.TryWithErrorValue(func() error {
+					maybeResponses <- mo.Ok(searchWithCreationDate(newGithubApiClient(ctx), minStars, maxStars, creationDateRange, i))
+					log.Printf("[async] Got response for page %v\n", i)
+					return nil
+				})
+				if !ok {
+					maybeResponses <- mo.Err[GithubSearchResponse](errors.Errorf("Could not fetch async search: %v", err))
+				}
+			}(i)
+		}
 
-		for i, maybeResponse := range maybeResponses {
+		for i := startAtPage; i <= pages-1; i++ {
+			maybeResponse, ok := <-maybeResponses
+			lo.Must0(ok, "[async] Did not receive enough maybeResponses")
 			response := maybeResponse.MustGet()
-			log.Printf("[async] Processing response %v after async loop\n", i)
 			lo.Must0(response.WaitIfNeccessary(ctx))
 			save(db, response)
 			decreaseMaxStarsToMinumum(db, response)
