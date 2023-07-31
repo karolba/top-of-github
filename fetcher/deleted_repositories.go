@@ -102,7 +102,7 @@ func getRepo(githubClient *http.Client, id int64, fullName string) GithubSearchR
 
 func getLikelyDeletedRepositories(db *xorm.Engine, howMany int) (repos []Repo) {
 	lo.Must0(db.
-		Where("NotSeenSinceCounter > 2").
+		Where("NotSeenSinceCounter > 1").
 		Desc("NotSeenSinceCounter").
 		Asc("Id").
 		Limit(howMany).
