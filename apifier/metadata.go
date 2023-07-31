@@ -90,5 +90,6 @@ func saveMetadata() {
 		log.Fatal(err)
 	}
 
+	fileSaveWaitGroup.Add(1)
 	go saveDataToGzipFile(fmt.Sprintf("%s/metadata", *outputDir), jsonData)
 }

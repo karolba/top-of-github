@@ -9,12 +9,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"code.gitea.io/gitea/modules/emoji"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 var db *sql.DB
+var fileSaveWaitGroup sync.WaitGroup
 
 const JSON_PAGINATION_PAGE_SIZE = 500
 
@@ -169,6 +171,8 @@ func main() {
 	}
 
 	exportForAll(columnNames)
+
+	fileSaveWaitGroup.Wait()
 }
 
 func exportForAll(columnNames []string) {
@@ -233,6 +237,7 @@ func retrieveAndSaveAll(columnNames []string, pageSize int, offset int, page int
 	records := rowsAsRecords(rows, columnNames)
 	records = emojify(records)
 
+	fileSaveWaitGroup.Add(1)
 	go saveToFile(fileName, records)
 
 	// Break the loop if there are no more records
@@ -259,6 +264,7 @@ func retrieveAndSaveByLanguage(columnNames []string, pageSize int, offset int, p
 	records := rowsAsRecords(rows, columnNames)
 	records = emojify(records)
 
+	fileSaveWaitGroup.Add(1)
 	go saveToFile(fileName, records)
 
 	// Break the loop if there are no more records
@@ -300,4 +306,5 @@ func saveDataToGzipFile(fileName string, data []byte) {
 	}
 
 	log.Printf("Created file '%s'\n", fileName)
+	fileSaveWaitGroup.Done()
 }
