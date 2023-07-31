@@ -151,7 +151,7 @@ func checkReposForDeletion(db *xorm.Engine, ctx context.Context) {
 		}
 
 		if response.TotalCount == 0 {
-			lo.Must(db.ID(likelyDeleted[i].Id).Delete(&Repo{}))
+			lo.Must(db.ID(likelyDeleted[i].Id).Unscoped().Delete(&Repo{}))
 			deletedCount++
 		} else {
 			save(db, response)
