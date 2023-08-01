@@ -48,8 +48,8 @@ func fetcherTask(ctx context.Context, db *xorm.Engine) {
 			} else {
 				log.Printf("Caught an error in fetcherTask: %+v\n", caught)
 			}
-			log.Println("Will sleep for 30s and try again")
-			time.Sleep(time.Second * 30)
+			log.Println("Will sleep for 15s and try again")
+			time.Sleep(time.Second * 15)
 		})
 	}
 }
