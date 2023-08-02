@@ -32,6 +32,8 @@ export function displaySearcher(metadata: MetadataReponse, language: Language | 
             let selected = metadata.Languages[clickedIndex - 1];
             goToOneLanguagesResults(selected, 1);
         }
+
+        jQuerySearcher.selectpicker('toggle');
     });
 
     setBootstrapSelectTheme(getPreferredTheme())
