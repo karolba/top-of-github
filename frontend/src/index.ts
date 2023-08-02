@@ -34,9 +34,11 @@ async function resultsForLanguage(language: Language, page: number): Promise<voi
 async function routeResults(metadata: MetadataReponse): Promise<void> {
     await routeFromHash(metadata, {
         async resultsAllLanguages(page: number) {
+            displaySearcher(metadata, null)
             await resultsForAllLanguages(page, metadata.AllReposPages)
         },
         async resultsOneLanguage(language: Language, page: number) {
+            displaySearcher(metadata, language)
             await resultsForLanguage(language, page)
         },
     })
@@ -61,11 +63,6 @@ async function run(): Promise<void> {
     displayStatisticsLoadingSpinner()
     let metadata = await getMetadata()
     displayStatistics(metadata)
-
-    await routeFromHash(metadata, {
-        resultsAllLanguages: async () => displaySearcher(metadata, null),
-        resultsOneLanguage: async language => displaySearcher(metadata, language),
-    })
 
     window.addEventListener('hashchange', async () => {
         await routeResults(metadata).catch(displayResultsError)
