@@ -20,6 +20,9 @@ var fileSaveWaitGroup sync.WaitGroup
 
 const JSON_PAGINATION_PAGE_SIZE = 500
 
+const MAXIMUM_REPOSITORY_NOT_SEEN_SINCE = 7
+const MINIMUM_REPOSITORY_STARGAZERS = 5
+
 type Record map[string]any
 
 type closable interface {
@@ -65,7 +68,8 @@ func programmingLanguages() []string {
 // additionally, the repos have to have been found at least 15 search cycles back
 // - this prevents displaying deleted repositories.
 func createActiveRepoView() {
-	_, err := db.Exec(`
+	// Have to use sprintf here, because as sqlite points out: "parameters are not allowed in views"
+	_, err := db.Exec(fmt.Sprintf(`
 		begin transaction;
 		drop view if exists ActiveRepo;
 		create view ActiveRepo as
@@ -78,6 +82,7 @@ func createActiveRepoView() {
 		        Homepage,
 		        Language,
 		        LicenseSpdxId,
+		        LicenseName,
 		        Name,
 		        OwnerAvatarUrl,
 		        OwnerLogin,
@@ -85,11 +90,12 @@ func createActiveRepoView() {
 		        RepoUpdatedAt,
 		        Stargazers
 		     from Repo
-		     where NotSeenSinceCounter < 15;
+		     where Repo.NotSeenSinceCounter <= %d
+			 and Repo.Stargazers >= %d;
 		end;
-	`)
+	`, MAXIMUM_REPOSITORY_NOT_SEEN_SINCE, MINIMUM_REPOSITORY_STARGAZERS))
 	if err != nil {
-		log.Fatalln("Could not create the ActiveRepo view")
+		log.Fatalln("Could not create the ActiveRepo view:", err)
 	}
 }
 
@@ -99,7 +105,7 @@ func createIndices() {
 		create index if not exists LanguageStargazersId on Repo(Language, Stargazers DESC, Id, NotSeenSinceCounter);
 	`)
 	if err != nil {
-		log.Fatalln("\nCould not create index LanguageStargazers", err)
+		log.Fatalln("\nCould not create index LanguageStargazers:", err)
 	}
 	log.Println("done")
 
@@ -108,7 +114,7 @@ func createIndices() {
 		create index if not exists StargazersId on Repo(Stargazers DESC, Id, NotSeenSinceCounter);
 	`)
 	if err != nil {
-		log.Fatalln("\nCould not create index Stargazers", err)
+		log.Fatalln("\nCould not create index Stargazers:", err)
 	}
 	log.Println("done")
 }

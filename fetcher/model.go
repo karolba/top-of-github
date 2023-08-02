@@ -25,6 +25,7 @@ type Repo struct {
 	} `json:"owner" xorm:"extends"`
 	License struct {
 		SpdxId string `json:"spdx_id" xorm:"'LicenseSpdxId'"`
+		Name   string `json:"name" xorm:"'LicenseName'"`
 	} `json:"license" xorm:"extends"`
 
 	LastFetchedFromGithubAt  time.Time `json:"-"`
