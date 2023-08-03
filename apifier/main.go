@@ -291,6 +291,8 @@ func saveToFile(fileName string, records []Record) {
 }
 
 func saveDataToGzipFile(fileName string, data []byte) {
+	defer fileSaveWaitGroup.Done()
+
 	err := os.MkdirAll(filepath.Dir(fileName), os.ModePerm)
 	if err != nil {
 		log.Fatalf("Could not create directory %v: %v\n", filepath.Dir(fileName), err)
@@ -312,5 +314,4 @@ func saveDataToGzipFile(fileName string, data []byte) {
 	}
 
 	log.Printf("Created file '%s'\n", fileName)
-	fileSaveWaitGroup.Done()
 }
