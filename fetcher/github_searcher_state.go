@@ -12,7 +12,7 @@ import (
 
 const (
 	MAX_STARS_KEY               = "max_stars"
-	MAX_STARS_DEFAULT           = 50000
+	MAX_STARS_DEFAULT           = 200000
 	SEARCH_WINDOW_KEY           = "search_window"
 	SEARCH_WINDOW_DEFAULT       = 1000
 	DATE_START_DAY_KEY          = "day_start"

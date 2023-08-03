@@ -387,7 +387,7 @@ func numberOfPages(results int64) int {
 }
 
 func fetchAndSaveReposWithVeryHighStarsCount(db *xorm.Engine, client *http.Client, ctx context.Context) {
-	log.Println("Fetching and saving the top of the top - repositiories with at least 50 thousand stars")
+	log.Println("Fetching and saving the top of the top - repositiories with at least 200 thousand stars")
 	minStars, maxStars := int64(MAX_STARS_DEFAULT), int64(10000000)
 
 	resp := search(client, minStars, maxStars, 1)
