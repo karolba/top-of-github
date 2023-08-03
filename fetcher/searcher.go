@@ -64,19 +64,22 @@ func (resp *GithubSearchResponse) WaitIfNeccessary(ctx context.Context) error {
 	return nil
 }
 
-func search(githubClient *http.Client, minStars, maxStars int64, page int, searchTerm ...string) GithubSearchResponse {
-	if minStars == maxStars {
-		log.Printf("[search] searching for %v stars, page: %v, extra search terms: %v\n",
-			minStars, page, searchTerm)
-	} else {
-		log.Printf("[search] searching from %v to %v stars, page: %v, extra search terms: %v\n",
-			minStars, maxStars, page, searchTerm)
-	}
+func minStarsQuery(minStars int64) string {
+	return fmt.Sprintf("stars:>%v", minStars)
+}
 
-	query := fmt.Sprintf("stars:%v..%v", minStars, maxStars)
-	if len(searchTerm) != 0 {
-		query += " " + strings.Join(searchTerm, " ")
-	}
+func minMaxStarsQuery(minStars int64, maxStars int64) string {
+	return fmt.Sprintf("stars:%v..%v", minStars, maxStars)
+}
+
+func createdOnQuery(creation RepoCreationDateRange) string {
+	return "created:" + creation.ToQueryString()
+}
+
+func search(githubClient *http.Client, page int, searchTerm ...string) GithubSearchResponse {
+	query := strings.Join(searchTerm, " ")
+
+	log.Printf("[search] searching with terms '%s' - page %d\n", query, page)
 
 	reqUrl := lo.Must(url.Parse("https://api.github.com/search/repositories"))
 
@@ -112,13 +115,9 @@ func search(githubClient *http.Client, minStars, maxStars int64, page int, searc
 	return decodedResponse
 }
 
-func searchWithCreationDate(ghClient *http.Client, minStars, maxStars int64, creation RepoCreationDateRange, page int) GithubSearchResponse {
-	return search(ghClient, minStars, maxStars, page, "created:"+creation.ToQueryString())
-}
-
-func searchWithCreationDateToChannel(ctx context.Context, maybeResponse chan<- mo.Either[GithubSearchResponse, GithubSearchResponseError], minStars int64, maxStars int64, creationDateRange RepoCreationDateRange, page int) {
+func searchToChannel(ctx context.Context, maybeResponse chan<- mo.Either[GithubSearchResponse, GithubSearchResponseError], page int, searchTerm ...string) {
 	err, ok := lo.TryWithErrorValue(func() error {
-		maybeResponse <- mo.Left[GithubSearchResponse, GithubSearchResponseError](searchWithCreationDate(newGithubApiClient(ctx), minStars, maxStars, creationDateRange, page))
+		maybeResponse <- mo.Left[GithubSearchResponse, GithubSearchResponseError](search(newGithubApiClient(ctx), page, searchTerm...))
 		log.Printf("[async] Got response for page %v\n", page)
 		return nil
 	})
@@ -149,9 +148,9 @@ func biggerWindow(window int64) int64 {
 }
 
 func decreaseWindowSize(db *xorm.Engine) {
-
 	oldSearchWindow := GetSearchWindow(db)
 	newSearchWindow := smallerWindow(oldSearchWindow)
+
 	log.Printf("Decreasing window size from %v to %v", oldSearchWindow, newSearchWindow)
 
 	SetSearchWindow(db, newSearchWindow)
@@ -202,7 +201,7 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 
 	// TODO: handle IncompleteResults == true
 
-	firstPage := searchWithCreationDate(client, minStars, maxStars, creationDateRange, 1)
+	firstPage := search(client, 1, minMaxStarsQuery(minStars, maxStars), createdOnQuery(creationDateRange))
 	lo.Must0(firstPage.WaitIfNeccessary(ctx))
 	save(db, firstPage)
 
@@ -267,8 +266,9 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 	}
 
 	// we already have the first page (have to get it first synchronously to get the number of pages), so start from the second one
-	startFetchAtPage := 2
-	pagesLeftToProcess := pages - 1
+	startAtPage := 2
+	startFetchAtPage := startAtPage
+	pagesLeftToProcess := pages - startAtPage + 1
 
 	maybeResponses := make(chan mo.Either[GithubSearchResponse, GithubSearchResponseError], pagesLeftToProcess)
 
@@ -277,7 +277,7 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 		firstBatchSize := min(firstPage.RatelimitRemaining, pagesLeftToProcess)
 		maybeResponsesBeforeRatelimit := make(chan mo.Either[GithubSearchResponse, GithubSearchResponseError], firstBatchSize)
 		for i := 0; i < firstBatchSize; i++ {
-			go searchWithCreationDateToChannel(ctx, maybeResponsesBeforeRatelimit, minStars, maxStars, creationDateRange, startFetchAtPage+i)
+			go searchToChannel(ctx, maybeResponsesBeforeRatelimit, startFetchAtPage+i, minMaxStarsQuery(minStars, maxStars), createdOnQuery(creationDateRange))
 		}
 		for i := 0; i < firstBatchSize; i++ {
 			maybeResponse, ok := <-maybeResponsesBeforeRatelimit
@@ -292,7 +292,7 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 
 	// And now either fetch all the pages or (if we were low on Ratelimit) fetch the pages left
 	for i := startFetchAtPage; i <= pages; i++ {
-		go searchWithCreationDateToChannel(ctx, maybeResponses, minStars, maxStars, creationDateRange, i)
+		go searchToChannel(ctx, maybeResponses, i, minMaxStarsQuery(minStars, maxStars), createdOnQuery(creationDateRange))
 	}
 
 	savedMaybeResponses := make([]mo.Result[GithubSearchResponse], pagesLeftToProcess)
@@ -304,10 +304,10 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 			func(response GithubSearchResponse) {
 				log.Printf("[async] Processing response for page %d\n", response.Page)
 				save(db, response)
-				savedMaybeResponses[response.Page-2] = mo.Ok(response)
+				savedMaybeResponses[response.Page-startAtPage] = mo.Ok(response)
 			}, func(error GithubSearchResponseError) {
 				log.Printf("[async] Skipping saving for page %d because of an error\n", error.Page)
-				savedMaybeResponses[error.Page-2] = mo.Err[GithubSearchResponse](error.Error)
+				savedMaybeResponses[error.Page-startAtPage] = mo.Err[GithubSearchResponse](error.Error)
 			})
 	}
 
@@ -387,10 +387,10 @@ func numberOfPages(results int64) int {
 }
 
 func fetchAndSaveReposWithVeryHighStarsCount(db *xorm.Engine, client *http.Client, ctx context.Context) {
-	log.Println("Fetching and saving the top of the top - repositiories with at least 200 thousand stars")
-	minStars, maxStars := int64(MAX_STARS_DEFAULT), int64(10000000)
+	log.Printf("Fetching and saving the top of the top - repositiories with at least %d stars\n", MAX_STARS_DEFAULT)
+	minStars := int64(MAX_STARS_DEFAULT)
 
-	resp := search(client, minStars, maxStars, 1)
+	resp := search(client, 1, minStarsQuery(minStars))
 	lo.Must0(resp.WaitIfNeccessary(ctx))
 	save(db, resp)
 
@@ -401,7 +401,7 @@ func fetchAndSaveReposWithVeryHighStarsCount(db *xorm.Engine, client *http.Clien
 	}
 
 	for page := 2; page <= pages; page += 1 {
-		res := search(client, minStars, maxStars, page)
+		res := search(client, page, minStarsQuery(minStars))
 		lo.Must0(res.WaitIfNeccessary(ctx))
 		save(db, res)
 	}
