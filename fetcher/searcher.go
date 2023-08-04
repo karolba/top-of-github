@@ -69,15 +69,23 @@ func minStarsQuery(minStars int64) string {
 }
 
 func minMaxStarsQuery(minStars int64, maxStars int64) string {
-	return fmt.Sprintf("stars:%v..%v", minStars, maxStars)
+	if minStars == maxStars {
+		return fmt.Sprintf("stars:%v", minStars)
+	} else {
+		return fmt.Sprintf("stars:%v..%v", minStars, maxStars)
+	}
 }
 
 func createdOnQuery(creation RepoCreationDateRange) string {
-	return "created:" + creation.ToQueryString()
+	if creation.CoversEverything() {
+		return ""
+	} else {
+		return "created:" + creation.ToQueryString()
+	}
 }
 
 func search(githubClient *http.Client, page int, searchTerm ...string) GithubSearchResponse {
-	query := strings.Join(searchTerm, " ")
+	query := strings.Trim(strings.Join(searchTerm, " "), " ")
 
 	log.Printf("[search] searching with terms '%s' - page %d\n", query, page)
 
