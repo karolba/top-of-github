@@ -105,7 +105,7 @@ func search(githubClient *http.Client, page int, searchTerm ...string) GithubSea
 
 	response := lo.Must(githubClient.Do(req))
 	if response.StatusCode != http.StatusOK {
-		panic("Received response code " + response.Status + " from github")
+		log.Panicf("Received response code %v from github. Response body: %v", response.Status, string(lo.Must(io.ReadAll(response.Body))))
 	}
 
 	if *enableResponsesLog {
