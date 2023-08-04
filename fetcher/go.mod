@@ -4,17 +4,17 @@ go 1.20
 
 require (
 	github.com/beatlabs/github-auth v0.0.0-20230414144152-f39a1f09f680
-	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.38.1
 	github.com/samber/mo v1.8.0
-	xorm.io/xorm v1.3.2
+	xorm.io/xorm v1.3.3-0.20221209153726-f1bfc5ce9830
 )
 
 require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
-	github.com/goccy/go-json v0.9.11 // indirect
+	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect

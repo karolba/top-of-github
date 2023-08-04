@@ -1,0 +1,8 @@
+go 1.20
+
+use (
+	./apifier
+	./dev-api-server
+	./fetcher
+	./uploader
+)
