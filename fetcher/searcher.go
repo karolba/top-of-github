@@ -123,9 +123,9 @@ func search(githubClient *http.Client, page int, searchTerm ...string) GithubSea
 	return decodedResponse
 }
 
-func searchToChannel(ctx context.Context, maybeResponse chan<- mo.Either[GithubSearchResponse, GithubSearchResponseError], page int, searchTerm ...string) {
+func searchToChannel(client *http.Client, maybeResponse chan<- mo.Either[GithubSearchResponse, GithubSearchResponseError], page int, searchTerm ...string) {
 	err, ok := lo.TryWithErrorValue(func() error {
-		maybeResponse <- mo.Left[GithubSearchResponse, GithubSearchResponseError](search(newGithubApiClient(ctx), page, searchTerm...))
+		maybeResponse <- mo.Left[GithubSearchResponse, GithubSearchResponseError](search(client, page, searchTerm...))
 		log.Printf("[async] Got response for page %v\n", page)
 		return nil
 	})
@@ -289,7 +289,7 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 		firstBatchSize := min(firstPage.RatelimitRemaining, pagesLeftToProcess)
 		maybeResponsesBeforeRatelimit := make(chan mo.Either[GithubSearchResponse, GithubSearchResponseError], firstBatchSize)
 		for i := 0; i < firstBatchSize; i++ {
-			go searchToChannel(ctx, maybeResponsesBeforeRatelimit, startFetchAtPage+i, minMaxStarsQuery(minStars, maxStars), createdOnQuery(creationDateRange))
+			go searchToChannel(client, maybeResponsesBeforeRatelimit, startFetchAtPage+i, minMaxStarsQuery(minStars, maxStars), createdOnQuery(creationDateRange))
 		}
 		for i := 0; i < firstBatchSize; i++ {
 			maybeResponse, ok := <-maybeResponsesBeforeRatelimit
@@ -304,7 +304,7 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 
 	// And now either fetch all the pages or (if we were low on Ratelimit) fetch the pages left
 	for i := startFetchAtPage; i <= pages; i++ {
-		go searchToChannel(ctx, maybeResponses, i, minMaxStarsQuery(minStars, maxStars), createdOnQuery(creationDateRange))
+		go searchToChannel(client, maybeResponses, i, minMaxStarsQuery(minStars, maxStars), createdOnQuery(creationDateRange))
 	}
 
 	savedMaybeResponses := make([]mo.Result[GithubSearchResponse], pagesLeftToProcess)

@@ -118,7 +118,7 @@ func min(x, y int) int {
 	return y
 }
 
-func checkReposForDeletion(db *xorm.Engine, ctx context.Context) {
+func checkReposForDeletion(ctx context.Context, githubApiClient *http.Client, db *xorm.Engine) {
 	previousRatelimitReset, previousRatelimitRemaining := GetRepoRatelimit(db)
 	isPreviousRatelimitStillAccurate := time.Until(previousRatelimitReset) > -3*time.Second
 
@@ -139,7 +139,7 @@ func checkReposForDeletion(db *xorm.Engine, ctx context.Context) {
 	log.Printf("[deleter] Checking %d likely-deleted repositories (asked the database for max %d)\n", len(likelyDeleted), parallelFetches)
 
 	responses := parallel.Map(likelyDeleted, func(repo Repo, index int) GithubSearchResponse {
-		return getRepo(newGithubApiClient(ctx), repo.Id, repo.FullName)
+		return getRepo(githubApiClient, repo.Id, repo.FullName)
 	})
 
 	deletedCount, updatedCount := 0, 0
