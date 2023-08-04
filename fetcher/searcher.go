@@ -266,6 +266,9 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 		// we got pretty close to the limit - but no repositories should be missing due to
 		// the result fitting in the 1000 responses limit
 		decreaseWindowSize(db)
+	} else if firstPage.IncompleteResults && firstPage.TotalCount >= MAX_RESULTS_PER_PAGE*(MAX_PAGES/2) && searchWindow != 0 {
+		// even if we aren't really close to the 10-page limit but IncompleteResults is set, let's try to make IncompleteResults go away
+		decreaseWindowSize(db)
 	} else if firstPage.TotalCount <= MAX_RESULTS_PER_PAGE*4 && creationDateRange.CoversEverything() {
 		// only up to four pages - can definitely increase the window size now
 		increaseWindowSize(db)
