@@ -14,7 +14,7 @@ const (
 	MAX_STARS_KEY               = "max_stars"
 	MAX_STARS_DEFAULT           = 200000
 	SEARCH_WINDOW_KEY           = "search_window"
-	SEARCH_WINDOW_DEFAULT       = 1000
+	SEARCH_WINDOW_DEFAULT       = 10000
 	DATE_START_DAY_KEY          = "day_start"
 	DATE_DAYS_WINDOW_KEY        = "days_window"
 	GETREPO_RATELIMIT_RESET     = "getrepo_ratelimit_reset"

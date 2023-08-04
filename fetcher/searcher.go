@@ -231,12 +231,13 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 	// Only do after checking if TotalCount wasn't overflowed
 	if pages == 0 {
 		if creationDateRange.CoversToday() {
-			log.Println("[zero] No results are present, the date range covers today - decreasing maxStars by 1")
+			log.Println("[zero] No results are present, the date range covers today - decreasing maxStars by 1 and increasing the window size")
 			SetMaxStars(db, maxStars-1)
+			increaseWindowSize(db)
 			return
 		} else {
-			log.Println("[zero] No results are present, the date range doesn't cover today - going to the next date range")
-			creationDateRange.NextRange().Save(db)
+			log.Println("[zero] No results are present, the date range doesn't cover today - going to the next date range and increasing date range size")
+			creationDateRange.NextRange().BiggerRange().Save(db)
 			return
 		}
 	}
