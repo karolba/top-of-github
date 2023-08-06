@@ -59,12 +59,15 @@ export async function routePreloadFromHash(routes: Routes): Promise<void> {
     }
 }
 
-export function goToAllLanguagesResults(page: number) {
-    saveScrollPosition()
-    window.location.hash = `${page}`
+export function allLanguagesResultsHref(page: number): string {
+    return `#${page}`
 }
 
-export function goToOneLanguagesResults(language: Language, page: number) {
+export function oneLanguageResultsHref(language: Language, page: number): string {
+    return `#${language.EscapedName}/${page}`
+}
+
+export function goTo(address: string) {
     saveScrollPosition()
-    window.location.hash = `${language.EscapedName}/${page}`
+    window.location.assign(address)
 }

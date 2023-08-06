@@ -1,7 +1,7 @@
 import { allLanguagesToplistPage, getMetadata, languageToplistPage, preloadAllLanguagesToplistPage, preloadLanguageToplistPage } from './api.js';
 import { Language, MetadataReponse } from './apitypes.js';
 import { displayResultsLoadingSpinner, displayResults, displayResultsError, displayStatisticsLoadingSpinner, displayStatistics, displaySearcher } from './views.js';
-import { goToAllLanguagesResults, goToOneLanguagesResults, routePreloadFromHash, routeFromHash } from './routes.js';
+import { routePreloadFromHash, routeFromHash, allLanguagesResultsHref, oneLanguageResultsHref } from './routes.js';
 import { restoreScrollPosition, saveScrollPosition } from './scrollPosition.js';
 import { setupThemeHandling } from './colorModes.js';
 
@@ -11,7 +11,7 @@ async function resultsForAllLanguages(page: number, pages: number): Promise<void
         displayResultsLoadingSpinner()
         let allLanguagesPage = await allLanguagesToplistPage(page)
 
-        displayResults(allLanguagesPage, page, pages, goToAllLanguagesResults)
+        displayResults(allLanguagesPage, page, pages, allLanguagesResultsHref)
     } catch(e: any) {
         displayResultsError(e)
     }
@@ -22,10 +22,8 @@ async function resultsForLanguage(language: Language, page: number): Promise<voi
         displayResultsLoadingSpinner()
         let pageResults = await languageToplistPage(language.EscapedName, page)
 
-        let onPageChange = (newPage: number) => {
-            goToOneLanguagesResults(language, newPage)
-        }
-        displayResults(pageResults, page, language.Pages, onPageChange)
+        let newPageHref = (newPage: number): string => oneLanguageResultsHref(language, newPage)
+        displayResults(pageResults, page, language.Pages, newPageHref)
     } catch(e: any) {
         displayResultsError(e)
     }

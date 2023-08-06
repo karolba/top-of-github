@@ -119,13 +119,13 @@ function Repo(repo: Repository): JSX.Element {
     )
 }
 
-export default function Results(repositories: Repository[], page: number, pages: number, onPageChange: (page: number) => void): JSX.Element {
+export default function Results(repositories: Repository[], page: number, pages: number, newPageHref: (page: number) => string): JSX.Element {
     return (
         <div>
             <ul className="list-group">
                 {repositories.map(Repo)}
             </ul>
-            {Pagination(page, pages, onPageChange)}
+            {Pagination(page, pages, newPageHref)}
         </div>
     )
 }

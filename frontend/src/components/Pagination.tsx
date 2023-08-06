@@ -1,5 +1,5 @@
 import { h } from "dom-chef";
-import { saveScrollPosition } from "../scrollPosition";
+import { ScrollPositionSavingLink, saveScrollPosition } from "../scrollPosition";
 
 // generates a list of successive positive integers of length n
 // range(n) == [0, 1, 2, ..., n-1]
@@ -22,7 +22,7 @@ function insertEllipsis(arr: number[]): (number | string)[] {
     }, []);
 };
 
-export default function Pagination(page: number, pages: number, onPageChange: (newPage: number) => void): JSX.Element {
+export default function Pagination(page: number, pages: number, hrefForPage: (newPage: number) => string): JSX.Element {
     let showNPagesAroundCurrent = 6
     
     // Show more pages around the current one if it's near the start
@@ -43,9 +43,9 @@ export default function Pagination(page: number, pages: number, onPageChange: (n
         <nav aria-label="Results navigation" className="pt-3 pb-1">
             <ul className="pagination flex-wrap justify-content-center">
                 <li className={`page-item ${page == 1 ? 'disabled' : ''}`}>
-                    <a className="page-link" href="#" onClick={ev => { ev.preventDefault(); saveScrollPosition(); onPageChange(1) }}>
+                    <ScrollPositionSavingLink className="page-link" href={hrefForPage(1)}>
                         Previous
-                    </a>
+                    </ScrollPositionSavingLink>
                 </li>
                 {displayPagesWithEllipsis
                     .map(pageNumber =>
@@ -61,16 +61,16 @@ export default function Pagination(page: number, pages: number, onPageChange: (n
                             </li>
                         :
                             <li className="page-item">
-                                <a className="page-link" href="#" onClick={ev => { ev.preventDefault(); saveScrollPosition(); onPageChange(Number(pageNumber)) }}>
+                                <ScrollPositionSavingLink className="page-link" href={hrefForPage(Number(pageNumber))}>
                                     {pageNumber}
-                                </a>
+                                </ScrollPositionSavingLink>
                             </li>
                     )
                 }
                 <li className={`page-item ${page >= pages ? 'disabled' : ''}`}>
-                    <a className="page-link" href="#" onClick={ev => { ev.preventDefault(); saveScrollPosition(); onPageChange(pages) }}>
+                    <ScrollPositionSavingLink className="page-link" href={hrefForPage(pages)}>
                         Next
-                    </a>
+                    </ScrollPositionSavingLink>
                 </li>
             </ul>
         </nav>

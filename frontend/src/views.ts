@@ -5,7 +5,7 @@ import Results from './components/Results.js';
 import ResultsError from './components/ResultsError.js';
 import Searcher from './components/Searcher.js';
 import Statistics from './components/Statistics.js';
-import { goToAllLanguagesResults, goToOneLanguagesResults } from './routes.js';
+import { allLanguagesResultsHref, goTo, oneLanguageResultsHref } from './routes.js';
 
 export function displayStatistics(metadata: MetadataReponse): void {
     document.getElementById('statistics-container')!.replaceChildren(Statistics(metadata));
@@ -27,10 +27,10 @@ export function displaySearcher(metadata: MetadataReponse, language: Language | 
         }
 
         if (clickedIndex == 0) {
-            goToAllLanguagesResults(1);
+            goTo(allLanguagesResultsHref(1));
         } else {
             let selected = metadata.Languages[clickedIndex - 1];
-            goToOneLanguagesResults(selected, 1);
+            goTo(oneLanguageResultsHref(selected, 1));
         }
 
         jQuerySearcher.selectpicker('toggle');
@@ -39,7 +39,7 @@ export function displaySearcher(metadata: MetadataReponse, language: Language | 
     setBootstrapSelectTheme(getPreferredTheme())
 }
 
-export function displayResults(repositories: ToplistPageResponse, page: number, pages: number, onPageChange: (page: number) => void): void {
+export function displayResults(repositories: ToplistPageResponse, page: number, pages: number, onPageChange: (page: number) => string): void {
     document.getElementById('results-container')!.replaceChildren(Results(repositories, page, pages, onPageChange));
 }
 
