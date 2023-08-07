@@ -90,7 +90,9 @@ function Repo(repo: Repository): JSX.Element {
                 <div className="d-md-flex">
                     <div className="me-auto" style={{overflowWrap: "anywhere"}}>
                         <ScrollPositionSavingLink href={githubAccountLink(repo.OwnerLogin)}>{repo.OwnerLogin}</ScrollPositionSavingLink>
-                        <> / </>
+                        <span className="user-select-none"> </span>
+                        /
+                        <span className="user-select-none"> </span>
                         <ScrollPositionSavingLink href={repo.GithubLink} className="fw-bold">{repo.Name}</ScrollPositionSavingLink>
                     </div>
                     <div className="text-md-end">
