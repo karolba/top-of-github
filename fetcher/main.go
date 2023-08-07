@@ -35,7 +35,7 @@ func fetcherTask(ctx context.Context, db *xorm.Engine) {
 
 		lo.TryCatchWithErrorValue(func() error {
 			doFetcherTask(ctx, githubApiClient, db)
-			checkReposForDeletion(ctx, githubApiClient, db)
+			checkReposForDeletion(githubApiClient, db)
 			return nil
 		}, func(caught any) {
 			type stackTracer interface{ StackTrace() errors.StackTrace }

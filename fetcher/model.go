@@ -31,6 +31,8 @@ type Repo struct {
 	LastFetchedFromGithubAt  time.Time `json:"-"`
 	FirstFetchedFromGithubAt time.Time `json:"-"`
 
+	GetRepoApiLastModifiedHeader string `json:"-"`
+
 	NotSeenSinceCounter int64 `json:"-"`
 }
 

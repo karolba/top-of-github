@@ -27,6 +27,7 @@ type GithubSearchResponse struct {
 	RatelimitRemaining int       `json:"-"`
 	RatelimitReset     time.Time `json:"-"`
 	Page               int       `json:"-"`
+	NotModified        bool      `json:"-"`
 }
 
 type GithubSearchResponseError struct {

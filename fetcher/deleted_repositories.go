@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +18,9 @@ import (
 
 const HOW_MANY_REPOS_TO_CHECK_AT_ONCE_MAX = 50
 
+func notModified(response *http.Response) bool {
+	return response.StatusCode == http.StatusNotModified
+}
 func surelyExists(response *http.Response) bool {
 	return response.StatusCode == http.StatusOK
 }
@@ -28,13 +30,16 @@ func surelyDoesntExist(response *http.Response) bool {
 		response.StatusCode == http.StatusUnavailableForLegalReasons // "This repository is currently disabled due to a DMCA takedown notice."
 }
 
-func getRepo(githubClient *http.Client, id int64, fullName string) GithubSearchResponse {
+func getRepo(githubClient *http.Client, id int64, fullName string, savedLastModified string) GithubSearchResponse {
 	result := GithubSearchResponse{
 		IncompleteResults: true,
 	}
 
 	reqUrl := lo.Must(url.Parse(fmt.Sprintf("https://api.github.com/repos/%s", fullName)))
 	req := lo.Must(http.NewRequest("GET", reqUrl.String(), nil))
+	if savedLastModified != "" {
+		req.Header.Set("If-Modified-Since", savedLastModified)
+	}
 
 	if *enableRequestLog {
 		reqLogger.Println(string(lo.Must(httputil.DumpRequest(req, false))))
@@ -50,7 +55,7 @@ func getRepo(githubClient *http.Client, id int64, fullName string) GithubSearchR
 		resLogger.Println(string(lo.Must(httputil.DumpResponse(response, false))))
 	}
 
-	if !surelyExists(response) && !surelyDoesntExist(response) {
+	if !surelyExists(response) && !notModified(response) && !surelyDoesntExist(response) {
 		log.Printf("[deleter] getRepo: Received response code %s from github\n", response.Status)
 		return result
 	}
@@ -68,28 +73,36 @@ func getRepo(githubClient *http.Client, id int64, fullName string) GithubSearchR
 	}
 	result.RatelimitReset = time.Unix(ratelimitReset, 0)
 
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		log.Println(fmt.Errorf("[deleter] getRepo: Could not read response body: %w", err))
-		return result
-	}
-
-	repo := Repo{}
-	err = json.Unmarshal(body, &repo)
-	if err != nil {
-		log.Println(fmt.Errorf("[deleter] getRepo: Could not decode repo json from GitHub: %w", err))
-		return result
-	}
-	// Note: the ID returned by the GitHub /repo endpoint is different from the one returned from the
-	// /search endpoint. Let's override the ID to the search one here to be sure to never use the wrong
-	// one anywhere
-	repo.Id = id
-
 	if surelyDoesntExist(response) {
 		result.TotalCount = 0
 		result.Items = []Repo{}
 		result.IncompleteResults = false
+	} else if notModified(response) {
+		result.TotalCount = 0
+		result.Items = []Repo{}
+		result.NotModified = true
+		result.IncompleteResults = false
 	} else if surelyExists(response) {
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			log.Println(fmt.Errorf("[deleter] getRepo: Could not read response body: %w", err))
+			return result
+		}
+
+		repo := Repo{}
+		err = json.Unmarshal(body, &repo)
+		if err != nil {
+			log.Println(fmt.Errorf("[deleter] getRepo: Could not decode repo json from GitHub: %w", err))
+			return result
+		}
+
+		repo.GetRepoApiLastModifiedHeader = response.Header.Get("Last-Modified")
+
+		// Note: the ID returned by the GitHub /repo endpoint is different from the one returned from the
+		// /search endpoint. Let's override the ID to the search one here to be sure to never use the wrong
+		// one anywhere
+		repo.Id = id
+
 		result.TotalCount = 1
 		result.Items = []Repo{repo}
 		result.IncompleteResults = false
@@ -118,7 +131,7 @@ func min(x, y int) int {
 	return y
 }
 
-func checkReposForDeletion(ctx context.Context, githubApiClient *http.Client, db *xorm.Engine) {
+func checkReposForDeletion(githubApiClient *http.Client, db *xorm.Engine) {
 	previousRatelimitReset, previousRatelimitRemaining := GetRepoRatelimit(db)
 	isPreviousRatelimitStillAccurate := time.Until(previousRatelimitReset) > -3*time.Second
 
@@ -139,10 +152,10 @@ func checkReposForDeletion(ctx context.Context, githubApiClient *http.Client, db
 	log.Printf("[deleter] Checking %d likely-deleted repositories (asked the database for max %d)\n", len(likelyDeleted), parallelFetches)
 
 	responses := parallel.Map(likelyDeleted, func(repo Repo, index int) GithubSearchResponse {
-		return getRepo(githubApiClient, repo.Id, repo.FullName)
+		return getRepo(githubApiClient, repo.Id, repo.FullName, repo.GetRepoApiLastModifiedHeader)
 	})
 
-	deletedCount, updatedCount := 0, 0
+	deletedCount, notModifiedCount, updatedCount := 0, 0, 0
 
 	for i, response := range responses {
 		if response.IncompleteResults {
@@ -150,7 +163,9 @@ func checkReposForDeletion(ctx context.Context, githubApiClient *http.Client, db
 			continue
 		}
 
-		if response.TotalCount == 0 {
+		if response.NotModified {
+			notModifiedCount++
+		} else if response.TotalCount == 0 {
 			lo.Must(db.ID(likelyDeleted[i].Id).Unscoped().Delete(&Repo{}))
 			deletedCount++
 		} else {
@@ -159,7 +174,7 @@ func checkReposForDeletion(ctx context.Context, githubApiClient *http.Client, db
 		}
 	}
 
-	if deletedCount > 0 || updatedCount > 0 {
+	if deletedCount > 0 || notModifiedCount > 0 || updatedCount > 0 {
 		ratelimitReset := time.Unix(0, 0)
 		ratelimitRemaining := 0
 
@@ -179,5 +194,6 @@ func checkReposForDeletion(ctx context.Context, githubApiClient *http.Client, db
 		SetRepoRatelimit(db, ratelimitReset, ratelimitRemaining)
 	}
 
-	log.Printf("[deleter] Done checking deleted repos: deleted %d repositories and updated %d repositories\n", deletedCount, updatedCount)
+	log.Printf("[deleter] Done checking deleted repos: deleted %d, updated %d repositories, %d were not modified\n",
+		deletedCount, updatedCount, notModifiedCount)
 }
