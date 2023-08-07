@@ -83,6 +83,7 @@ function Repo(repo: Repository): JSX.Element {
                     width={AVATAR_SIZE_PX}
                     height={AVATAR_SIZE_PX}
                     src={addQueryParam(new URL(repo.OwnerAvatarUrl), 's', `${AVATAR_SIZE_PX * 2}`).toString()}
+                    loading="lazy"
                 ></img>
             </div>
             <div className="ms-md-2 w-100 text-break">
