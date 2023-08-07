@@ -23,6 +23,7 @@ export interface Repository {
     Homepage: string
     Language: string
     LicenseSpdxId: string
+    LicenseName: string
     Name: string
     OwnerAvatarUrl: string
     OwnerLogin: string

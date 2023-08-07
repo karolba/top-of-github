@@ -104,7 +104,7 @@ function Repo(repo: Repository): JSX.Element {
                         {lastPushedToBadge}
                         {createdAtBadge}
                         {repo.LicenseSpdxId && repo.LicenseSpdxId != 'NOASSERTION'
-                            ? <span className="badge bg-info text-dark rounded-pill m-1">{repo.LicenseSpdxId}</span>
+                            ? <span className="badge bg-info text-dark rounded-pill m-1" title={repo.LicenseName}>{repo.LicenseSpdxId}</span>
                             : <></>
                         }
                     </div>
