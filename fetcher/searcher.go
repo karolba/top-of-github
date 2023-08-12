@@ -345,6 +345,7 @@ func save(db *xorm.Engine, resp GithubSearchResponse) {
 	lo.Must(db.Transaction(func(tx *xorm.Session) (any, error) {
 		for _, repo := range resp.Items {
 			repo.LastFetchedFromGithubAt = time.Now()
+			repo.NotSeenSinceCounter = 0
 			if lo.Must(tx.Exist(&Repo{Id: repo.Id})) {
 				lo.Must(tx.ID(repo.Id).AllCols().Update(repo))
 			} else {

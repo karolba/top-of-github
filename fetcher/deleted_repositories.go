@@ -30,15 +30,15 @@ func surelyDoesntExist(response *http.Response) bool {
 		response.StatusCode == http.StatusUnavailableForLegalReasons // "This repository is currently disabled due to a DMCA takedown notice."
 }
 
-func getRepo(githubClient *http.Client, id int64, fullName string, savedLastModified string) GithubSearchResponse {
+func getRepo(githubClient *http.Client, previouslyFetchedRepo Repo) GithubSearchResponse {
 	result := GithubSearchResponse{
 		IncompleteResults: true,
 	}
 
-	reqUrl := lo.Must(url.Parse(fmt.Sprintf("https://api.github.com/repos/%s", fullName)))
+	reqUrl := lo.Must(url.Parse(fmt.Sprintf("https://api.github.com/repos/%s", previouslyFetchedRepo.FullName)))
 	req := lo.Must(http.NewRequest("GET", reqUrl.String(), nil))
-	if savedLastModified != "" {
-		req.Header.Set("If-Modified-Since", savedLastModified)
+	if previouslyFetchedRepo.GetRepoApiLastModifiedHeader != "" {
+		req.Header.Set("If-Modified-Since", previouslyFetchedRepo.GetRepoApiLastModifiedHeader)
 	}
 
 	if *enableRequestLog {
@@ -78,8 +78,10 @@ func getRepo(githubClient *http.Client, id int64, fullName string, savedLastModi
 		result.Items = []Repo{}
 		result.IncompleteResults = false
 	} else if notModified(response) {
-		result.TotalCount = 0
-		result.Items = []Repo{}
+		// If no changes: return the repository with the same old metadata, but just the last-modified header changed
+		previouslyFetchedRepo.GetRepoApiLastModifiedHeader = response.Header.Get("Last-Modified")
+		result.TotalCount = 1
+		result.Items = []Repo{previouslyFetchedRepo}
 		result.NotModified = true
 		result.IncompleteResults = false
 	} else if surelyExists(response) {
@@ -101,7 +103,7 @@ func getRepo(githubClient *http.Client, id int64, fullName string, savedLastModi
 		// Note: the ID returned by the GitHub /repo endpoint is different from the one returned from the
 		// /search endpoint. Let's override the ID to the search one here to be sure to never use the wrong
 		// one anywhere
-		repo.Id = id
+		repo.Id = previouslyFetchedRepo.Id
 
 		result.TotalCount = 1
 		result.Items = []Repo{repo}
@@ -152,7 +154,7 @@ func checkReposForDeletion(githubApiClient *http.Client, db *xorm.Engine) {
 	log.Printf("[deleter] Checking %d likely-deleted repositories (asked the database for max %d)\n", len(likelyDeleted), parallelFetches)
 
 	responses := parallel.Map(likelyDeleted, func(repo Repo, index int) GithubSearchResponse {
-		return getRepo(githubApiClient, repo.Id, repo.FullName, repo.GetRepoApiLastModifiedHeader)
+		return getRepo(githubApiClient, repo)
 	})
 
 	deletedCount, notModifiedCount, updatedCount := 0, 0, 0
@@ -163,14 +165,17 @@ func checkReposForDeletion(githubApiClient *http.Client, db *xorm.Engine) {
 			continue
 		}
 
-		if response.NotModified {
-			notModifiedCount++
-		} else if response.TotalCount == 0 {
+		if response.TotalCount == 0 {
 			lo.Must(db.ID(likelyDeleted[i].Id).Unscoped().Delete(&Repo{}))
 			deletedCount++
 		} else {
 			save(db, response)
-			updatedCount++
+
+			if response.NotModified {
+				notModifiedCount++
+			} else {
+				updatedCount++
+			}
 		}
 	}
 
