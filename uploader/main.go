@@ -188,6 +188,7 @@ func displayProgress(progress <-chan int, totalFiles int) {
 	for p := range progress {
 		uploadedFiles += p
 		percentage := (float64(uploadedFiles) / float64(totalFiles)) * 100
-		fmt.Printf("Upload progress: %.2f%%\n", percentage)
+		fmt.Printf("\rUpload progress: %.2f%%", percentage)
 	}
+	fmt.Println()
 }

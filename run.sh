@@ -18,7 +18,7 @@ while true; do
 	log_execution 'fetcher' \
 		./fetcher
 
-	rm -rfv to-upload
+	rm -rf to-upload
 
 	log_execution 'apifier' \
 		./apifier -output-dir to-upload
@@ -28,7 +28,7 @@ while true; do
 			-directory to-upload \
 			-bucket-name "${R2_PUBLIC_BUCKET_NAME:?}"
 
-	rm -rfv to-upload
+	rm -rf to-upload
 
 	log_execution 'sqlite vacuum' \
 		sqlite3 state/repos.db \
