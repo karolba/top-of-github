@@ -1,5 +1,5 @@
-code.gitea.io/gitea v1.19.3 h1:6RS02zVp/RZZyyIVnEQekVwM0rJOWmAXeejUHHibp/o=
-code.gitea.io/gitea v1.19.3/go.mod h1:mM4ZdUm2xiQ2VXyBo6cHCig9AWRKM8JxMJBX6irYtiE=
+code.gitea.io/gitea v1.20.2 h1:7bXlGg9G3DY5qbdwqxHxWUBmcCR94ysPVK28Z+wjlVc=
+code.gitea.io/gitea v1.20.2/go.mod h1:gbKgOq1L6djKNkteEDXYOkyTg5MWlU7puLeN/2gEA4I=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/mattn/go-sqlite3 v1.14.17 h1:mCRHCLDUBXgpKAqIKsaAaAsrAlbkeomtRFKXh2L6YIM=
 github.com/mattn/go-sqlite3 v1.14.17/go.mod h1:2eHXhiwb8IkHr+BDWZGa96P6+rkvnG63S2DGjv9HUNg=
