@@ -20,7 +20,6 @@ var fileSaveWaitGroup sync.WaitGroup
 
 const JSON_PAGINATION_PAGE_SIZE = 500
 
-const MAXIMUM_REPOSITORY_NOT_SEEN_SINCE = 7
 const MINIMUM_REPOSITORY_STARGAZERS = 5
 
 type Record map[string]any
@@ -89,11 +88,10 @@ func createActiveRepoView() {
 		        RepoPushedAt,
 		        RepoUpdatedAt,
 		        Stargazers
-		     from Repo
-		     where Repo.NotSeenSinceCounter <= %d
-			 and Repo.Stargazers >= %d;
+		    from Repo
+		    where Repo.Stargazers >= %d;
 		end;
-	`, MAXIMUM_REPOSITORY_NOT_SEEN_SINCE, MINIMUM_REPOSITORY_STARGAZERS))
+	`, MINIMUM_REPOSITORY_STARGAZERS))
 	if err != nil {
 		log.Fatalln("Could not create the ActiveRepo view:", err)
 	}
