@@ -126,13 +126,6 @@ func getLikelyDeletedRepositories(db *xorm.Engine, howMany int) (repos []Repo) {
 	return repos
 }
 
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
-}
-
 func checkReposForDeletion(githubApiClient *http.Client, db *xorm.Engine) {
 	previousRatelimitReset, previousRatelimitRemaining := GetRepoRatelimit(db)
 	isPreviousRatelimitStillAccurate := time.Until(previousRatelimitReset) > -3*time.Second

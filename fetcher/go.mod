@@ -1,6 +1,6 @@
 module github.com/karolba/top-of-github/fetcher
 
-go 1.20
+go 1.21
 
 require (
 	github.com/beatlabs/github-auth v0.0.0-20230730095625-88fe74f2204a
