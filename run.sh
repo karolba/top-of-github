@@ -47,5 +47,12 @@ while true; do
 			-content-type application/x-sqlite3
 
 	rm -rfv to-upload-backup
+
+	log_execution 'purging the metadata file from cache' \
+		curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_PURGE_CACHE_ZONE:?}/purge_cache" \
+		-H "Authorization: bearer ${CLOUDFLARE_PURGE_CACHE_TOKEN:?}" \
+		-H "Content-Type: application/json" \
+		--data "{\"files\":[\"https://${CLOUDFLARE_PURGE_CACHE_DOMAIN:?}/metadata\"]}"
+
 done
 
