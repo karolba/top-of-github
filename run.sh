@@ -3,9 +3,14 @@
 log_execution() {
 	name="$1"; shift
 
-	echo "$(date -I'seconds'): $name - starting" | tee -a ./event-log.log >> /dev/stderr
+	echo "$(date -I'seconds'): $name - starting" | tee -a state/event-log.log >> /dev/stderr
 	"$@"
-	echo "$(date -I'seconds'): $name - ended with error code $?" | tee -a ./event-log.log >> /dev/stderr
+	exit_code=$?
+	echo "$(date -I'seconds'): $name - ended with error code $exit_code" | tee -a state/event-log.log >> /dev/stderr
+
+	if [ "$exit_code" -ne 0 ]; then
+		exit "$exit_code"
+	fi
 }
 
 set -a

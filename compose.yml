@@ -1,0 +1,19 @@
+name: git-top-repos
+
+services:
+  git-top-repos:
+    image: top-of-github
+    init: true
+    build:
+      context: .
+      target: runner
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /opt/top-of-github-state
+        target: /top-of-github/state
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "512m"
