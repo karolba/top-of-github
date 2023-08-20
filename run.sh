@@ -26,7 +26,7 @@ while true; do
 	rm -rf to-upload
 
 	log_execution 'apifier' \
-		./apifier -output-dir to-upload
+		nice ./apifier -output-dir to-upload
 
 	log_execution 'uploader' \
 		./uploader \
@@ -36,14 +36,14 @@ while true; do
 	rm -rf to-upload
 
 	log_execution 'sqlite vacuum' \
-		sqlite3 state/repos.db \
+		nice sqlite3 state/repos.db \
 			"pragma journal_mode=WAL; pragma temp_store_directory='.'; vacuum"
 
 	rm -rfv to-upload-backup
 	mkdir -p to-upload-backup
 
 	log_execution 'compressing state.db for a backup upload' \
-		gzip < state/repos.db > to-upload-backup/repos.db.gz
+		nice gzip < state/repos.db > to-upload-backup/repos.db.gz
 
 	log_execution 'uploading compressed database backup' \
 		./uploader \
