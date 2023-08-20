@@ -181,3 +181,43 @@ resource "cloudflare_email_routing_catch_all" "this" {
 #  type    = "R2"
 #  value   = cloudflare_r2_bucket.rendered_api.id
 #}
+
+resource "cloudflare_ruleset" "transform_modify_response_headers_for_cors" {
+  zone_id = data.cloudflare_zone.this.zone_id
+  name    = "data-cors"
+  kind    = "zone"
+  phase   = "http_response_headers_transform"
+
+  rules {
+    description = "Set CORS headers for the data subdomain"
+
+    action = "rewrite"
+    action_parameters {
+      headers {
+        name      = "Access-Control-Allow-Headers"
+        operation = "set"
+        value     = "*"
+      }
+      headers {
+        name      = "Access-Control-Allow-Methods"
+        operation = "set"
+        value     = "GET, HEAD"
+      }
+      headers {
+        name      = "Access-Control-Allow-Origin"
+        operation = "set"
+        value     = "*"
+      }
+    }
+    expression = "(http.host eq \"data.${var.domain_name}\")"
+    enabled    = true
+  }
+}
+
+resource "cloudflare_managed_headers" "this" {
+  zone_id = data.cloudflare_zone.this.zone_id
+  managed_response_headers {
+    id      = "add_security_headers"
+    enabled = true
+  }
+}
