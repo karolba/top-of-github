@@ -49,6 +49,16 @@ function githubAccountLink(accountName: string): string {
     return `https://github.com/${encodeURIComponent(accountName)}`
 }
 
+function makeSureLinkIsntRelative(href: string): string {
+    if(href.startsWith('https://')) {
+        return href
+    } else if(href.startsWith('http://')) {
+        return href
+    } else {
+        return `http://${href}`
+    }
+}
+
 function Repo(repo: Repository): JSX.Element {
     // TODO: replace this manual date math below with something better
 
@@ -114,7 +124,7 @@ function Repo(repo: Repository): JSX.Element {
                 </div>
                 {repo.Description}
                 {repo.Homepage
-                    ? <> - <ScrollPositionSavingLink href={repo.Homepage}>{repo.Homepage}</ScrollPositionSavingLink></>
+                    ? <> - <ScrollPositionSavingLink href={makeSureLinkIsntRelative(repo.Homepage)}>{repo.Homepage}</ScrollPositionSavingLink></>
                     : <></>
                 }
             </div>
