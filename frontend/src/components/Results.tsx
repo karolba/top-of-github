@@ -12,6 +12,13 @@ function addQueryParam(url: URL, param: string, value: string): URL {
     return url;
 }
 
+function pluralize(howMany: number, word: string): string {
+    if(howMany == 1)
+        return `${howMany} ${word}`
+    else
+        return `${howMany} ${word}s`
+}
+
 function NotPushedToInAWhileBadge(lastPushedDaysAgo: number): JSX.Element {
     // TODO: replace this manual date math with something better
     let lastPushedYearsAgo = lastPushedDaysAgo / 365.25;
@@ -20,7 +27,7 @@ function NotPushedToInAWhileBadge(lastPushedDaysAgo: number): JSX.Element {
         return <></>
 
     return <span className="badge bg-warning text-dark rounded-pill m-1">
-        Last push {Math.round(lastPushedYearsAgo*10) / 10} years ago
+        Last push {pluralize(Math.round(lastPushedYearsAgo*10) / 10, 'year')} ago
     </span>
 }
 
@@ -30,15 +37,15 @@ function CreatedAtBadge(createdAtDaysAgo: number): JSX.Element {
 
     if(createdAtYearsAgo > 1) {
         return <span className="badge bg-secondary rounded-pill m-1">
-            {Math.round(createdAtYearsAgo * 10) / 10} years old
+            {pluralize(Math.round(createdAtYearsAgo * 10) / 10, 'year')} old
         </span>
     } else if(createdAtDaysAgo > 31) {
         return <span className="badge bg-success rounded-pill m-1">
-            {Math.round(createdAtYearsAgo * 12)} months old
+            {pluralize(Math.round(createdAtYearsAgo * 12), 'month')} old
         </span>
     } else {
         return <span className="badge bg-success rounded-pill m-1">
-            {Math.round(createdAtDaysAgo)} days old
+            {pluralize(Math.round(createdAtDaysAgo), 'day')} old
         </span>
     }
 
