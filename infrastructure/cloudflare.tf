@@ -214,6 +214,34 @@ resource "cloudflare_ruleset" "transform_modify_response_headers_for_cors" {
   }
 }
 
+# As this is pretty much a static website, disable all unnecessary "security" layers that might prevent
+# the website from loading
+resource "cloudflare_ruleset" "disable_all_firewall_steps" {
+  zone_id = data.cloudflare_zone.this.zone_id
+  kind    = "zone"
+  name    = "default"
+  phase   = "http_request_firewall_custom"
+
+  rules {
+    description = "skip all unneccessary security steps for a static website"
+    action      = "skip"
+
+    action_parameters {
+      # disable everything that can be disabled
+      phases   = ["http_ratelimit", "http_request_firewall_managed", "http_request_sbfm"]
+      products = ["zoneLockdown", "uaBlock", "bic", "hot", "securityLevel", "rateLimit", "waf"]
+      ruleset  = "current"
+    }
+    logging {
+      enabled = true
+    }
+
+    # a bogus expression that's always true to match everything
+    expression = "(http.request.method eq \"GET\") or (http.request.method ne \"GET\")"
+    enabled    = true
+  }
+}
+
 resource "cloudflare_managed_headers" "this" {
   zone_id = data.cloudflare_zone.this.zone_id
   managed_response_headers {
