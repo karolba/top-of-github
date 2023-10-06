@@ -16,7 +16,7 @@ import (
 	"xorm.io/xorm"
 )
 
-const HOW_MANY_REPOS_TO_CHECK_AT_ONCE_MAX = 50
+const HOW_MANY_REPOS_TO_CHECK_AT_ONCE_MAX = 25
 
 func notModified(response *http.Response) bool {
 	return response.StatusCode == http.StatusNotModified
@@ -117,7 +117,7 @@ func getRepo(githubClient *http.Client, previouslyFetchedRepo Repo) GithubSearch
 
 func getLikelyDeletedRepositories(db *xorm.Engine, howMany int) (repos []Repo) {
 	lo.Must0(db.
-		Where("NotSeenSinceCounter > 1").
+		Where("NotSeenSinceCounter > 2").
 		Desc("NotSeenSinceCounter").
 		Asc("Id").
 		Limit(howMany).
