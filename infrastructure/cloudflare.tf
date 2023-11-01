@@ -249,3 +249,52 @@ resource "cloudflare_managed_headers" "this" {
     enabled = true
   }
 }
+
+# Cache known js and css assets that don't change:
+locals {
+    known_static_files_expression = <<-EOT
+      (http.host eq "${var.domain_name}" and (
+        starts_with(http.request.uri.path, "/external-libraries/")
+        or (starts_with(http.request.uri.path, "/index-") and ends_with(http.request.uri.path, ".js"))))
+    EOT
+    cache_static_files_for = 28 * 24 * 60 * 60 # a month
+}
+resource "cloudflare_ruleset" "cache_rules_for_static_assets" {
+  zone_id = data.cloudflare_zone.this.zone_id
+  kind    = "zone"
+  name    = "cache-known-static-assets"
+  phase   = "http_request_cache_settings"
+  rules {
+    description = "Cache static javascript and css files for longer than the default"
+    action = "set_cache_settings"
+    action_parameters {
+      cache = true
+      browser_ttl {
+        mode    = "override_origin"
+        default = local.cache_static_files_for
+      }
+      cache_key {
+        cache_deception_armor = true
+        custom_key {
+          query_string {
+            exclude = ["*"]
+          }
+        }
+      }
+      edge_ttl {
+        default = 86400
+        mode    = "override_origin"
+        status_code_ttl {
+          status_code = 200
+          value       = local.cache_static_files_for
+        }
+      }
+      serve_stale {
+        disable_stale_while_updating = true
+      }
+    }
+    expression  = local.known_static_files_expression
+    enabled     = true
+  }
+}
+
