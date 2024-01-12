@@ -252,12 +252,12 @@ resource "cloudflare_managed_headers" "this" {
 
 # Cache known js and css assets that don't change:
 locals {
-    known_static_files_expression = <<-EOT
+  known_static_files_expression = <<-EOT
       (http.host eq "${var.domain_name}" and (
         starts_with(http.request.uri.path, "/external-libraries/")
         or (starts_with(http.request.uri.path, "/index-") and ends_with(http.request.uri.path, ".js"))))
     EOT
-    cache_static_files_for = 28 * 24 * 60 * 60 # a month
+  cache_static_files_for        = 28 * 24 * 60 * 60 # a month
 }
 resource "cloudflare_ruleset" "cache_rules_for_static_assets" {
   zone_id = data.cloudflare_zone.this.zone_id
@@ -266,7 +266,7 @@ resource "cloudflare_ruleset" "cache_rules_for_static_assets" {
   phase   = "http_request_cache_settings"
   rules {
     description = "Cache static javascript and css files for longer than the default"
-    action = "set_cache_settings"
+    action      = "set_cache_settings"
     action_parameters {
       cache = true
       browser_ttl {
@@ -293,8 +293,9 @@ resource "cloudflare_ruleset" "cache_rules_for_static_assets" {
         disable_stale_while_updating = true
       }
     }
-    expression  = local.known_static_files_expression
-    enabled     = true
+    expression = local.known_static_files_expression
+    enabled    = true
   }
 }
+
 
