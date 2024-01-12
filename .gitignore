@@ -1,15 +1,31 @@
+# Secrets
 /.env
 
+# IDEs and OS
 .idea/
+.swp
+.DS_Store
 
+# GitHub app key
 *.private-key.pem
 
+# Frontend dependencies and artifacts
 /frontend/node_modules/
 /frontend/dist/
 
+# Compiled binaries
 /apifier/apifier
 /dev-api-server/dev-api-server
 /fetcher/fetcher
 /uploader/uploader
 
+# Cross-compiled binaries
 /linux-build/
+
+# Terraform
+.generated_archives
+.terraform
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfvars
