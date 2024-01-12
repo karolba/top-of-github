@@ -142,7 +142,7 @@ resource "cloudflare_email_routing_settings" "this" {
 
 resource "cloudflare_email_routing_address" "this" {
   account_id = local.cloudflare_account_id
-  email      = "forwarded-from-git-top-repos@baraniecki.eu"
+  email      = var.forward_all_from_domain_to_email
 }
 
 resource "cloudflare_email_routing_catch_all" "this" {
@@ -156,7 +156,7 @@ resource "cloudflare_email_routing_catch_all" "this" {
 
   action {
     type  = "forward"
-    value = [var.forward_all_from_domain_to_email]
+    value = [cloudflare_email_routing_address.this.email]
   }
 }
 
