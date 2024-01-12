@@ -23,3 +23,21 @@ variable "r2_buckets_name_base" {
   type        = string
   nullable    = false
 }
+
+variable "forward_all_from_domain_to_email" {
+  description = "Email to forward all email messages received to the domain to"
+  type        = string
+  nullable    = false
+}
+
+variable "monitoring_warning_emails_from" {
+  description = "Email to send monitoring warning emails from"
+  type        = string
+  nullable    = false
+}
+
+variable "monitoring_warning_emails_to" {
+  description = "Email to send monitoring warning emails to"
+  type        = string
+  nullable    = false
+}

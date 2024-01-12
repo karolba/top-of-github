@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    cloudflare = {
-      source  = "cloudflare/cloudflare"
-      version = "~> 4.0"
-    }
-  }
-}
-
 provider "cloudflare" {
   email   = var.cloudflare_email
   api_key = var.cloudflare_api_key
@@ -165,7 +156,7 @@ resource "cloudflare_email_routing_catch_all" "this" {
 
   action {
     type  = "forward"
-    value = ["forwarded-from-git-top-repos@baraniecki.eu"]
+    value = [var.forward_all_from_domain_to_email]
   }
 }
 
