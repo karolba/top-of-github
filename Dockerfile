@@ -1,7 +1,7 @@
 ARG ALPINE_VERSION=3.18
 ARG GO_VERSION=1.21
 
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder-base
+FROM public.ecr.aws/docker/library/golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder-base
 RUN apk add --no-cache --update gcc g++ musl-dev
 WORKDIR /build
 
@@ -23,7 +23,7 @@ RUN go mod download
 COPY fetcher/*.go .
 RUN CGO_ENABLED=1 go build -v -o fetcher --ldflags '-linkmode external -extldflags "-static"'
 
-FROM alpine:${ALPINE_VERSION} AS runner
+FROM public.ecr.aws/docker/library/alpine:${ALPINE_VERSION} AS runner
 RUN apk add --no-cache --update sqlite curl
 WORKDIR /top-of-github
 COPY --from=apifier-builder /build/apifier .
