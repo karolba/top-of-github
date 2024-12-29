@@ -37,35 +37,30 @@ func getColumnNames(db *sql.DB, tableName string) ([]string, error) {
 	return columns, nil
 }
 
+func rowAsRecord(singleRow *sql.Rows, columns []string) Record {
+	record := make(Record)
+	values := make([]any, len(columns))
+
+	valuePtrs := make([]any, len(columns))
+	for i := range columns {
+		valuePtrs[i] = &values[i]
+	}
+
+	if err := singleRow.Scan(valuePtrs...); err != nil {
+		log.Fatalln(err)
+	}
+
+	for i, col := range columns {
+		record[col] = values[i]
+	}
+
+	return record
+}
+
 func rowsAsRecords(rows *sql.Rows, columns []string) []Record {
-	// Create a slice to hold the records
 	records := []Record{}
-
-	// Iterate over the rows and store the data
 	for rows.Next() {
-		record := make(Record)
-		// Create a slice to hold the values of each column
-		values := make([]any, len(columns))
-		// Create a slice to hold the pointers to the values
-		valuePtrs := make([]any, len(columns))
-
-		// Populate the value pointers with the addresses of the corresponding column values
-		for i := range columns {
-			valuePtrs[i] = &values[i]
-		}
-
-		// Scan the row into the value pointers
-		err := rows.Scan(valuePtrs...)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		// Map column names to their values in the record
-		for i, col := range columns {
-			record[col] = values[i]
-		}
-
-		records = append(records, record)
+		records = append(records, rowAsRecord(rows, columns))
 	}
 	return records
 }

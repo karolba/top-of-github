@@ -43,11 +43,20 @@ func saveMetadata() {
 	}
 
 	// Query for count of repos and stars per language
+	// hack: GitHub marks vimscript as either "Vim Script", "Vim script" or "VimL" - fix that
 	rows, err := db.Query(`
-		SELECT Language, SUM(Stargazers), COUNT(*)
-		FROM ActiveRepo
-		GROUP BY Language
-		ORDER BY COUNT(*) DESC, Name
+		WITH toplist AS MATERIALIZED (
+			SELECT Name, Language, SUM(Stargazers) AS SumStargazers, COUNT(*) AS CountRepos
+			FROM ActiveRepo
+			GROUP BY Language
+		)
+		SELECT
+			CASE WHEN Language IN ("Vim Script", "Vim script", "VimL") THEN "Vim Script / VimL" ELSE Language END as LanguageName,
+			SUM(SumStargazers) AS SumStargazers,
+			SUM(CountRepos) AS CountRepos
+		FROM toplist
+		GROUP BY LanguageName
+		ORDER BY CountRepos DESC, Name
 	`)
 	if err != nil {
 		log.Fatal(err)

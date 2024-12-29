@@ -2,16 +2,19 @@ package main
 
 import (
 	"compress/gzip"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
 	"code.gitea.io/gitea/modules/emoji"
+	"github.com/leporo/sqlf"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -41,17 +44,13 @@ func programmingLanguages() []string {
 	// programming language we've ever came across.
 	query := "SELECT DISTINCT Language FROM Repo"
 
-	// Execute the query
 	rows, err := db.Query(query)
 	if err != nil {
 		log.Fatalln("Error executing query:", err)
 	}
 	defer closeOrPanic(rows)
 
-	// Slice to store the unique languages
 	var languages []string
-
-	// Iterate over the query results
 	for rows.Next() {
 		var language string
 		if err := rows.Scan(&language); err != nil {
@@ -59,7 +58,6 @@ func programmingLanguages() []string {
 		}
 		languages = append(languages, language)
 	}
-
 	return languages
 }
 
@@ -147,7 +145,6 @@ func escapeLanguageName(name string) string {
 
 func main() {
 	// Open a connection to the SQLite database
-
 	var err error
 	db, err = sql.Open("sqlite3", fmt.Sprintf("%s?mode=rw&_busy_timeout=-5000&_journal_mode=WAL", *databasePath))
 	if err != nil {
@@ -170,8 +167,16 @@ func main() {
 	// Retrieve all possible languages from the Repo table
 	languages := programmingLanguages()
 
+	// A hack: GitHub tags vimscript as three separate language names: "Vim Script", "Vim script", and "VimL"
+	// - pretend they're the same thing
+	githubLanguageNamesForVimScript := []string{"Vim Script", "Vim script", "VimL"}
+	exportForLanguage("Vim Script / VimL", githubLanguageNamesForVimScript, columnNames)
+
 	for _, language := range languages {
-		exportForLanguage(language, columnNames)
+		if slices.Contains(githubLanguageNamesForVimScript, language) {
+			break
+		}
+		exportForLanguage(language, []string{language}, columnNames)
 	}
 
 	exportForAll(columnNames)
@@ -192,13 +197,13 @@ func exportForAll(columnNames []string) {
 	}
 }
 
-func exportForLanguage(language string, columnNames []string) {
+func exportForLanguage(language string, githubNamesForTheLanguage []string, columnNames []string) {
 	// Set the page size and initialize the offset
 	pageSize := JSON_PAGINATION_PAGE_SIZE
 	offset := 0
 	page := 1
 
-	for retrieveAndSaveByLanguage(columnNames, pageSize, offset, page, language) {
+	for retrieveAndSaveByLanguage(columnNames, pageSize, offset, page, language, githubNamesForTheLanguage) {
 		// Update offset and page number
 		offset += pageSize
 		page++
@@ -250,22 +255,33 @@ func retrieveAndSaveAll(columnNames []string, pageSize int, offset int, page int
 	return shouldContinue
 }
 
-func retrieveAndSaveByLanguage(columnNames []string, pageSize int, offset int, page int, language string) (shouldContinue bool) {
-	// Retrieve data from the database with pagination
-	rows, err := db.Query(`
-		SELECT * FROM ActiveRepo
-		WHERE Language=$1
-		ORDER BY Stargazers DESC, Id
-		LIMIT $2 OFFSET $3
-	`, language, pageSize, offset)
+func stringSliceToAnySlice(s []string) []any {
+	ret := make([]interface{}, len(s))
+	for i := range s {
+		ret[i] = s[i]
+	}
+	return ret
+}
+
+func retrieveAndSaveByLanguage(columnNames []string, pageSize int, offset int, page int, language string, githubNamesForTheLanguage []string) (shouldContinue bool) {
+	fileName := fmt.Sprintf("%s/language/%s/%d", *outputDir, escapeLanguageName(language), page)
+
+	records := make([]Record, 0, pageSize)
+
+	err := sqlf.From("ActiveRepo").
+		Select("*").
+		Where("Language").
+		In(stringSliceToAnySlice(githubNamesForTheLanguage)...).
+		OrderBy("Stargazers DESC, Id").
+		Limit(pageSize).
+		Offset(offset).
+		QueryAndClose(context.Background(), db, func(row *sql.Rows) {
+			records = append(records, rowAsRecord(row, columnNames))
+		})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer closeOrPanic(rows)
 
-	fileName := fmt.Sprintf("%s/language/%s/%d", *outputDir, escapeLanguageName(language), page)
-
-	records := rowsAsRecords(rows, columnNames)
 	records = emojify(records)
 
 	fileSaveWaitGroup.Add(1)
