@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -20,6 +21,7 @@ type Metadata struct {
 	CountOfAllRepos int64
 	AllReposPages   int64
 	CountOfAllStars int64
+	LastSyncTime    string
 	Languages       []Language
 }
 
@@ -90,6 +92,7 @@ func saveMetadata() {
 		CountOfAllRepos: countOfAllRepos,
 		CountOfAllStars: countOfAllStars,
 		AllReposPages:   numberOfPages(countOfAllRepos),
+		LastSyncTime:    time.Now().Format("2006-01-02T15:04:05+07:00"),
 		Languages:       languages,
 	}
 
