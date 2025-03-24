@@ -156,7 +156,7 @@ func biggerWindow(window int64) int64 {
 	return int64(math.Round(float64(window) * 1.5))
 }
 
-func decreaseWindowSize(db *xorm.Engine) {
+func decreaseStarWindowSize(db *xorm.Engine) {
 	oldSearchWindow := GetSearchWindow(db)
 	newSearchWindow := smallerWindow(oldSearchWindow)
 
@@ -165,13 +165,40 @@ func decreaseWindowSize(db *xorm.Engine) {
 	SetSearchWindow(db, newSearchWindow)
 }
 
-func increaseWindowSize(db *xorm.Engine) {
+func increaseStarWindowSize(db *xorm.Engine) {
 	oldSearchWindow := GetSearchWindow(db)
 	newSearchWindow := biggerWindow(oldSearchWindow)
 
 	log.Printf("Increasing window size from %v to %v", oldSearchWindow, newSearchWindow)
 
 	SetSearchWindow(db, newSearchWindow)
+}
+
+func halveDateRange(db *xorm.Engine) {
+	oldDateRange := GetRepoCreationDateRange(db)
+	newDateRange := oldDateRange.HalvedRange()
+
+	log.Printf("[creationDateRange] Halving from %v to %v\n", oldDateRange, newDateRange)
+
+	newDateRange.Save(db)
+}
+
+func biggerDateRange(db *xorm.Engine) {
+	oldDateRange := GetRepoCreationDateRange(db)
+	newDateRange := oldDateRange.BiggerRange()
+
+	log.Printf("[creationDateRange] Increasing from %v to %v\n", oldDateRange, newDateRange)
+
+	newDateRange.Save(db)
+}
+
+func nextDateRange(db *xorm.Engine) {
+	oldDateRange := GetRepoCreationDateRange(db)
+	newDateRange := oldDateRange.NextRange()
+
+	log.Printf("[creationDateRange] Going to the next date from %v to %v\n", oldDateRange, newDateRange)
+
+	newDateRange.Save(db)
 }
 
 func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
@@ -223,11 +250,11 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 		if searchWindow > 0 {
 			// we might be missing some results, redo the same search later with a decreased
 			// window size to get them
-			decreaseWindowSize(db)
+			decreaseStarWindowSize(db)
 		} else if creationDateRange.howManyDays > 0 {
 			// Search star window is 0, cannot decrease it anymore.
 			// Start decreasing the creation days window
-			creationDateRange.HalvedRange().Save(db)
+			halveDateRange(db)
 		} else {
 			panic("Cannot make the query any more specific!")
 		}
@@ -242,11 +269,12 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 		if creationDateRange.CoversToday() {
 			log.Println("[zero] No results are present, the date range covers today - decreasing maxStars by 1 and increasing the window size")
 			SetMaxStars(db, maxStars-1)
-			increaseWindowSize(db)
+			increaseStarWindowSize(db)
 			return
 		} else {
 			log.Println("[zero] No results are present, the date range doesn't cover today - going to the next date range and increasing date range size")
-			creationDateRange.NextRange().BiggerRange().Save(db)
+			nextDateRange(db)
+			biggerDateRange(db)
 			return
 		}
 	}
@@ -256,7 +284,7 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 		if creationDateRange.CoversToday() {
 			decreaseMaxStarsBeyondMinimum(db, firstPage)
 		} else {
-			creationDateRange.NextRange().Save(db)
+			nextDateRange(db)
 		}
 	} else {
 		// There are still results left to fetch for this amount of stars
@@ -266,16 +294,16 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 	if firstPage.TotalCount > MAX_RESULTS_PER_PAGE*(MAX_PAGES-2) && searchWindow != 0 {
 		// we got pretty close to the limit - but no repositories should be missing due to
 		// the result fitting in the 1000 responses limit
-		decreaseWindowSize(db)
+		decreaseStarWindowSize(db)
 	} else if firstPage.IncompleteResults && firstPage.TotalCount >= MAX_RESULTS_PER_PAGE*(MAX_PAGES/2) && searchWindow != 0 {
 		// even if we aren't really close to the 10-page limit but IncompleteResults is set, let's try to make IncompleteResults go away
-		decreaseWindowSize(db)
+		decreaseStarWindowSize(db)
 	} else if firstPage.TotalCount <= MAX_RESULTS_PER_PAGE*4 && creationDateRange.CoversEverything() {
 		// only up to four pages - can definitely increase the window size now
-		increaseWindowSize(db)
+		increaseStarWindowSize(db)
 	} else if firstPage.TotalCount <= MAX_RESULTS_PER_PAGE*4 && !creationDateRange.CoversToday() {
 		// the same - but when filtering on dates (and this isn't the last page)
-		creationDateRange.BiggerRange().Save(db)
+		biggerDateRange(db)
 	}
 
 	// we already have the first page (have to get it first synchronously to get the number of pages), so start from the second one
@@ -333,7 +361,7 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 				// this is the last page - we are sure nothing was missed, can decrease to one beyond minimum
 				decreaseMaxStarsBeyondMinimum(db, response)
 			} else {
-				creationDateRange.NextRange().Save(db)
+				nextDateRange(db)
 			}
 		} else {
 			decreaseMaxStarsToMinumum(db, response)
