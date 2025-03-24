@@ -1,8 +1,12 @@
 #!/bin/bash
+set -eu -o pipefail
 
 cd "$(dirname "$0")/.."
 
-[[ $# == 1 ]] || { echo "Usage: $0 [docker remote context name]" >&2; exit 1; }
+if ! [[ $# == 1 ]]; then
+    echo "Usage: $0 [docker remote context name]" >&2
+    exit 1
+fi
 remote_context="$1"
 
 with-log() (set -x; "$@")
