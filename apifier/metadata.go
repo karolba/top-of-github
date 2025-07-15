@@ -92,7 +92,7 @@ func saveMetadata() {
 		CountOfAllRepos: countOfAllRepos,
 		CountOfAllStars: countOfAllStars,
 		AllReposPages:   numberOfPages(countOfAllRepos),
-		LastSyncTime:    time.Now().Format("2006-01-02T15:04:05+07:00"),
+		LastSyncTime:    time.Now().Format(time.RFC1123),
 		Languages:       languages,
 	}
 
