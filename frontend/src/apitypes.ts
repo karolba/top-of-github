@@ -2,6 +2,7 @@ export interface MetadataReponse {
     CountOfAllRepos: number
     CountOfAllStars: number
     AllReposPages: number
+    LastSyncTime: string
     Languages: Language[]
 }
 
