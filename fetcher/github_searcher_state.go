@@ -15,8 +15,8 @@ const (
 	MAX_STARS_DEFAULT           = 200000
 	SEARCH_WINDOW_KEY           = "search_window"
 	SEARCH_WINDOW_DEFAULT       = 10000
-	DATE_START_DAY_KEY          = "day_start"
-	DATE_DAYS_WINDOW_KEY        = "days_window"
+	DATE_START_SECOND_KEY       = "second_start"
+	DATE_SECONDS_WINDOW_KEY     = "seconds_window"
 	GETREPO_RATELIMIT_RESET     = "getrepo_ratelimit_reset"
 	GETREPO_RATELIMIT_REMAINING = "getrepo_ratelimit_remaining"
 	DEFAULT_GETREPO_LIMIT       = 6000
@@ -68,8 +68,8 @@ func GetRepoRatelimit(db xorm.Interface) (ratelimitReset time.Time, ratelimitRem
 }
 
 type RepoCreationDateRange struct {
-	startingDay int
-	howManyDays int
+	startingSecond int64
+	howManySeconds int64
 }
 
 func githubCreationDay() time.Time {
@@ -78,64 +78,64 @@ func githubCreationDay() time.Time {
 
 func DefaultRepoCreationDateRange() RepoCreationDateRange {
 	aboutToday := time.Now().AddDate(0, 0, 2)
-	githubExistenceDays := int(aboutToday.Sub(githubCreationDay()).Hours() / 24.0)
+	githubExistenceSeconds := int64(aboutToday.Sub(githubCreationDay()).Seconds())
 	return RepoCreationDateRange{
-		startingDay: 0,
-		howManyDays: githubExistenceDays,
+		startingSecond: 0,
+		howManySeconds: githubExistenceSeconds,
 	}
 }
 
 func (r RepoCreationDateRange) CoversEverything() bool {
-	return r.startingDay == DefaultRepoCreationDateRange().startingDay && r.CoversToday()
+	return r.startingSecond == DefaultRepoCreationDateRange().startingSecond && r.CoversToday()
 }
 
 func GetRepoCreationDateRange(db *xorm.Engine) (r RepoCreationDateRange) {
-	r.startingDay = getFromState[int](db, DATE_START_DAY_KEY, -1)
-	if r.startingDay == -1 {
+	r.startingSecond = getFromState[int64](db, DATE_START_SECOND_KEY, -1)
+	if r.startingSecond == -1 {
 		return DefaultRepoCreationDateRange()
 	}
-	r.howManyDays = getFromState[int](db, DATE_DAYS_WINDOW_KEY, -1)
-	if r.howManyDays == -1 {
+	r.howManySeconds = getFromState[int64](db, DATE_SECONDS_WINDOW_KEY, -1)
+	if r.howManySeconds == -1 {
 		return DefaultRepoCreationDateRange()
 	}
 	return r
 }
 
 func (r RepoCreationDateRange) ToQueryString() string {
-	start := githubCreationDay().AddDate(0, 0, r.startingDay)
-	end := start.AddDate(0, 0, r.howManyDays)
-	return fmt.Sprintf("%v..%v", start.Format("2006-01-02"), end.Format("2006-01-02"))
+	start := githubCreationDay().Add(time.Duration(r.startingSecond) * time.Second)
+	end := start.Add(time.Duration(r.howManySeconds) * time.Second)
+	return fmt.Sprintf("%v..%v", start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"))
 }
 
 func (r RepoCreationDateRange) Save(db xorm.Interface) {
 	// todo: transaction?
-	setToState[int](db, DATE_START_DAY_KEY, r.startingDay)
-	setToState[int](db, DATE_DAYS_WINDOW_KEY, r.howManyDays)
+	setToState[int64](db, DATE_START_SECOND_KEY, r.startingSecond)
+	setToState[int64](db, DATE_SECONDS_WINDOW_KEY, r.howManySeconds)
 }
 
 func (r RepoCreationDateRange) HalvedRange() (ret RepoCreationDateRange) {
-	ret.startingDay = r.startingDay
-	ret.howManyDays = int(smallerWindow(int64(r.howManyDays)))
+	ret.startingSecond = r.startingSecond
+	ret.howManySeconds = smallerWindow(r.howManySeconds)
 	return ret
 }
 
 func (r RepoCreationDateRange) BiggerRange() (ret RepoCreationDateRange) {
-	ret.startingDay = r.startingDay
-	ret.howManyDays = int(biggerWindow(int64(r.howManyDays)))
+	ret.startingSecond = r.startingSecond
+	ret.howManySeconds = biggerWindow(r.howManySeconds)
 	return ret
 }
 
 func (r RepoCreationDateRange) CoversToday() bool {
 	end := githubCreationDay().
-		AddDate(0, 0, r.startingDay).
-		AddDate(0, 0, r.howManyDays)
-	// add 24 hours just in case of either some one-of errors somewhere, or very new repos
-	return end.After(time.Now().Add(24 * time.Hour))
+		Add(time.Duration(r.startingSecond) * time.Second).
+		Add(time.Duration(r.howManySeconds) * time.Second)
+	// add an hour just in case of either some one-of errors somewhere, or very new repos
+	return end.After(time.Now().Add(1 * time.Hour))
 }
 
 func (r RepoCreationDateRange) NextRange() (ret RepoCreationDateRange) {
-	ret.startingDay = r.startingDay + r.howManyDays + 1
-	ret.howManyDays = r.howManyDays
+	ret.startingSecond = r.startingSecond + r.howManySeconds + 1
+	ret.howManySeconds = r.howManySeconds
 	log.Printf("[creationDateRange] Going from %v to %v\n", r, ret)
 	return ret
 }

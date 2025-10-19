@@ -209,9 +209,9 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 	log.Println("-- Fetcher --")
 	log.Printf("-- Stars: [from %v to %v] -> window=%v, creation date range: %v --\n", minStars, maxStars, searchWindow, creationDateRange.ToQueryString())
 
-	if creationDateRange.howManyDays < 0 {
-		log.Printf("creationDateRange.howManyDays got set to %v, resetting to 1\n", creationDateRange.howManyDays)
-		creationDateRange.howManyDays = 1
+	if creationDateRange.howManySeconds < 0 {
+		log.Printf("creationDateRange.howManySeconds got set to %v, resetting to 60\n", creationDateRange.howManySeconds)
+		creationDateRange.howManySeconds = 60
 		creationDateRange.Save(db)
 		return
 	}
@@ -251,7 +251,7 @@ func doFetcherTask(ctx context.Context, client *http.Client, db *xorm.Engine) {
 			// we might be missing some results, redo the same search later with a decreased
 			// window size to get them
 			decreaseStarWindowSize(db)
-		} else if creationDateRange.howManyDays > 0 {
+		} else if creationDateRange.howManySeconds > 0 {
 			// Search star window is 0, cannot decrease it anymore.
 			// Start decreasing the creation days window
 			halveDateRange(db)
